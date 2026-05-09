@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Credit Spend Analyser
 
-## Getting Started
+A full-stack credit-card spend analysis dashboard built on Next.js 16, ShadCN UI, MongoDB, and OpenAI GPT-4o Mini. Upload statements (PDF / CSV / XLS / image), auto-detect the card type (Visa, Discover IT Student, Amex BCP), extract and categorize transactions, then explore spending insights and export reports.
 
-First, run the development server:
+## Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Copy the env template and fill in values:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+   ```bash
+   cp .env.example .env.local
+   # then edit .env.local
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   Required:
+   - `MONGODB_URI` — e.g. `mongodb://localhost:27017/credit-spend`
+   - `OPENAI_API_KEY` — for transaction extraction + categorization
+   - `AUTH_SECRET` — any 32+ char random string for signing session JWTs
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Create your first user:
 
-## Learn More
+   ```bash
+   npx tsx scripts/seed-user.ts --username admin --password yourpassword
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. Run the dev server:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   npm run dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   Open [http://localhost:3000](http://localhost:3000) and sign in.
 
-## Deploy on Vercel
+## Features
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Multi-format upload**: PDF, CSV, XLS/XLSX, JPG/PNG (≤ 20 MB)
+- **Auto card detection**: rule-based first, falls back to LLM if ambiguous
+- **GPT-4o Mini extraction**: structured JSON output with vision support for images
+- **Hybrid categorization**: merchant-rule first pass, GPT for ambiguous merchants
+- **Insights**: category breakdown, monthly trend, card comparison, top merchants, MoM change
+- **Reports**: filterable CSV/PDF export, statement history
+- **Auth**: bcrypt-hashed users, jose-signed JWT cookie, `proxy.ts` guards every route
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Architecture
+
+| Layer | Path |
+| --- | --- |
+| Auth guard | `proxy.ts` (Next.js 16 replaces middleware) |
+| Session helpers | `lib/auth.ts` |
+| MongoDB singleton | `lib/db.ts` |
+| OpenAI client | `lib/openai.ts` |
+| File parsers | `lib/parsers/` (pdf / csv / xls / image) |
+| Extraction services | `lib/services/` (card-detector, extractor, categorizer, extraction-pipeline) |
+| Mongo models | `lib/models/` |
+| Auth pages | `app/(auth)/login/` |
+| Dashboard pages | `app/(dashboard)/` (`/`, `/upload`, `/transactions`, `/reports`) |
+| API routes | `app/api/` (`auth`, `upload`, `transactions`, `insights`, `statements`, `export`) |
+
+## Notes
+
+- The app router uses async `cookies()` / `params` per Next.js 16.
+- ShadCN was initialized with the `base-nova` preset, so primitives use `@base-ui/react` (`render` prop) rather than Radix `asChild`.
+- Built and verified with `next build` (Turbopack).

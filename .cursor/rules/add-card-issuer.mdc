@@ -1,0 +1,54 @@
+---
+description: Guide for adding a new card issuer (Chase, Amex, etc.) to the upload pipeline
+globs: lib/services/category-mapper.ts,lib/services/categorizer.ts,lib/parsers/**,types/index.ts
+alwaysApply: false
+---
+
+# Adding a New Card Issuer
+
+## Step 1: Refactor category-mapper.ts (one-time, if still single-issuer)
+
+The file currently has a single flat `DISCOVER_CATEGORY_MAP`. Before adding a second issuer, restructure to per-issuer dispatch:
+
+```typescript
+// Before (single-issuer)
+const DISCOVER_CATEGORY_MAP: Record<string, Category | null> = { ... };
+function mapIssuerCategory(sourceCategory) { ... }
+
+// After (multi-issuer)
+const ISSUER_CATEGORY_MAPS: Partial<Record<CardType, Record<string, Category | null>>> = {
+  discover_it_student: { Restaurants: "Dining", ... },
+  chase_freedom: { "Food & Drink": "Dining", ... },
+};
+
+function mapIssuerCategory(cardType: CardType, sourceCategory: string | null) {
+  const map = ISSUER_CATEGORY_MAPS[cardType];
+  if (!map || !sourceCategory) return null;
+  const mapped = map[sourceCategory.trim()];
+  ...
+}
+```
+
+This changes the function signature — update all callers (categorizer.ts, extraction-pipeline.ts) to pass `cardType`.
+
+## Step 2: Add the new CardType
+
+- Add the new card type to the `CardType` union in `types/index.ts`
+- Add a label in `CARD_LABELS`
+- Add detection logic in `lib/services/card-detector.ts`
+
+## Step 3: Add CSV/XLS parser support (if structured)
+
+If the new issuer provides CSV/XLS, update `lib/parsers/csv-row-parser.ts`:
+- Add header detection for the new format
+- Map columns to `StructuredRow` fields (date, description, amount, category)
+
+## Step 4: Populate the issuer category map
+
+Map the new issuer's category strings to our `Category` values. Set ambiguous ones to `null` so they fall through to regex/AI tiers. Check the issuer's actual statement for the exact category strings they use.
+
+## Key constraints
+
+- Override map (category_overrides) is issuer-agnostic — learnings are shared across all cards
+- Regex merchant rules in categorizer.ts are also issuer-agnostic — no changes needed there
+- Never add a category string to `CATEGORIES` without updating all downstream consumers

@@ -1,0 +1,29 @@
+import { MongoClient, type Db } from "mongodb";
+
+declare global {
+  var __mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+function getClientPromise(): Promise<MongoClient> {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("MONGODB_URI is not set. Add it to .env.local.");
+  }
+  if (!global.__mongoClientPromise) {
+    const client = new MongoClient(uri);
+    global.__mongoClientPromise = client.connect();
+  }
+  return global.__mongoClientPromise;
+}
+
+export async function getDb(): Promise<Db> {
+  const client = await getClientPromise();
+  return client.db(process.env.MONGODB_DB ?? "credit-spend");
+}
+
+export const COLLECTIONS = {
+  users: "users",
+  statements: "statements",
+  transactions: "transactions",
+  categoryOverrides: "category_overrides",
+} as const;
