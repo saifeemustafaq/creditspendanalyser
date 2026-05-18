@@ -129,3 +129,68 @@ export interface SessionPayload {
   userId: string;
   username: string;
 }
+
+export type RecurringFrequency =
+  | "weekly"
+  | "bi-weekly"
+  | "monthly"
+  | "quarterly"
+  | "semi-annual"
+  | "annual";
+
+export type RecurringStatus = "active" | "possibly_cancelled" | "new";
+
+export type RecurringOverrideAction = "include" | "dismiss" | "frequency_override";
+
+export interface RecurringOverrideDoc {
+  _id: ObjectId;
+  userId: ObjectId;
+  merchant: string;
+  type: TransactionType;
+  action: RecurringOverrideAction;
+  frequency?: RecurringFrequency;
+  customNote?: string;
+  createdAt: Date;
+}
+
+export interface RecurringItem {
+  merchant: string;
+  averageAmount: number;
+  lastAmount: number;
+  frequency: RecurringFrequency;
+  confidence: number;
+  transactionCount: number;
+  firstSeen: string;
+  lastSeen: string;
+  nextExpected: string | null;
+  type: TransactionType;
+  category: Category;
+  status: RecurringStatus;
+  isVariable: boolean;
+  amountStdDev: number;
+  totalAnnualCost: number;
+  userOverride?: RecurringOverrideAction;
+}
+
+export type RecurringAlertType =
+  | "price_increase"
+  | "price_decrease"
+  | "possibly_cancelled"
+  | "new_detected"
+  | "unusual_amount";
+
+export interface RecurringAlert {
+  merchant: string;
+  type: RecurringAlertType;
+  message: string;
+  severity: "info" | "warning";
+  detectedAt: string;
+}
+
+export interface RecurringSummary {
+  totalMonthlyRecurring: number;
+  totalAnnualRecurring: number;
+  activeCount: number;
+  alerts: RecurringAlert[];
+  items: RecurringItem[];
+}

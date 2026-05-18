@@ -159,7 +159,7 @@ export function AuditResultsView({
                     <span className="text-muted-foreground">→</span>
                     {isManual ? (
                       <>
-                        <Badge className="bg-blue-600">{resolution.manualCategory}</Badge>
+                        <Badge className="bg-blue-600">{resolution?.manualCategory}</Badge>
                         <span className="text-muted-foreground">Manual</span>
                       </>
                     ) : (
@@ -218,7 +218,7 @@ export function AuditResultsView({
                 <div className="mt-2 flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">Override to:</span>
                   <Select
-                    value={isManual ? resolution.manualCategory : ""}
+                    value={isManual ? resolution?.manualCategory : ""}
                     onValueChange={(v) => handleManualSelect(d._id, v as Category)}
                   >
                     <SelectTrigger className="h-8 w-[200px] text-xs">

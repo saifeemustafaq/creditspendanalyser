@@ -26,4 +26,5 @@ export const COLLECTIONS = {
   statements: "statements",
   transactions: "transactions",
   categoryOverrides: "category_overrides",
+  recurringOverrides: "recurring_overrides",
 } as const;
