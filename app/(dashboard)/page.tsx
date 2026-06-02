@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CARD_LABELS, type Category } from "@/types";
 import type { CardType } from "@/types";
-import { CATEGORY_COLORS } from "@/lib/constants";
+import { CATEGORY_COLORS, SUMMARY_ACCENT } from "@/lib/constants";
 import { fmtCurrency, fmtDate } from "@/lib/format";
 import { CategoryBadge } from "@/components/category-badge";
 import { DashboardFilters } from "@/components/dashboard-filters";
@@ -92,12 +92,12 @@ export default async function DashboardPage({
             <SummaryCard
               label="Total spend"
               value={fmtCurrency(totalSpend)}
-              accentColor="#2563eb"
+              accentColor={SUMMARY_ACCENT.spend}
             />
             <SummaryCard
               label="Transactions"
               value={txCount.toString()}
-              accentColor="#059669"
+              accentColor={SUMMARY_ACCENT.count}
               tooltip={
                 <div className="flex flex-col gap-1">
                   <div className="font-medium">Transaction breakdown</div>
@@ -134,7 +134,11 @@ export default async function DashboardPage({
               value={momPct === null ? "—" : `${momPct >= 0 ? "+" : ""}${momPct.toFixed(1)}%`}
               tone={momPct === null ? "neutral" : momPct >= 0 ? "warn" : "good"}
               accentColor={
-                momPct === null ? "#6b7280" : momPct >= 0 ? "#d97706" : "#059669"
+                momPct === null
+                  ? SUMMARY_ACCENT.neutral
+                  : momPct >= 0
+                    ? SUMMARY_ACCENT.negative
+                    : SUMMARY_ACCENT.positive
               }
               tooltip={
                 momPct === null ? (
@@ -257,8 +261,10 @@ function SummaryCard({
 }) {
   const content = (
     <Card
-      className="border-l-4"
-      style={accentColor ? { borderLeftColor: accentColor } : undefined}
+      className={cn("border-l-4", accentColor && "border-l-[color:var(--accent-c)]")}
+      style={
+        accentColor ? ({ "--accent-c": accentColor } as React.CSSProperties) : undefined
+      }
     >
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>

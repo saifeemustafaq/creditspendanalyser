@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { CardBadge } from "@/components/card-badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,7 +17,6 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CARD_LABELS, CATEGORIES, type CardType } from "@/types";
-import { CARD_COLORS } from "@/lib/constants";
 import { fmtCurrency, fmtDate } from "@/lib/format";
 import { Download } from "lucide-react";
 
@@ -188,16 +187,7 @@ export default function ReportsPage() {
                     <TableCell>{fmtDate(s.uploadedAt)}</TableCell>
                     <TableCell className="font-medium">{s.originalFilename}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className="border-transparent"
-                        style={{
-                          backgroundColor: `${CARD_COLORS[s.cardType]}1A`,
-                          color: CARD_COLORS[s.cardType],
-                        }}
-                      >
-                        {CARD_LABELS[s.cardType]}
-                      </Badge>
+                      <CardBadge cardType={s.cardType} />
                     </TableCell>
                     <TableCell>{fmtDate(s.statementDate)}</TableCell>
                     <TableCell className="text-right tabular-nums">{s.transactionCount}</TableCell>

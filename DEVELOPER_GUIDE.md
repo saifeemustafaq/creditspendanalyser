@@ -37,6 +37,9 @@ creditspendanalyser/
 │   │   ├── upload/page.tsx             # Statement upload (multi-step: drop → review → confirm)
 │   │   ├── uploads/page.tsx            # Upload history with categorization stats and delete
 │   │   ├── transactions/page.tsx       # Transaction list
+│   │   ├── recurring/
+│   │   │   ├── page.tsx                # Recurring detection (summary + alerts + table)
+│   │   │   └── loading.tsx             # Recurring page skeleton
 │   │   └── reports/page.tsx            # Reports and export
 │   ├── api/
 │   │   ├── auth/route.ts              # Login / logout / session check
@@ -46,6 +49,8 @@ creditspendanalyser/
 │   │   ├── upload/confirm/route.ts    # Phase 2: persist reviewed transactions
 │   │   ├── statements/route.ts        # Statement history
 │   │   ├── statements/[id]/route.ts   # Bulk delete statement + its transactions
+│   │   ├── recurring/route.ts         # GET detected recurring summary
+│   │   ├── recurring/overrides/route.ts # POST/DELETE user recurring overrides
 │   │   ├── transactions/route.ts      # CRUD transactions
 │   │   ├── transactions/audit/sample/route.ts   # Audit: sample + AI cross-check
 │   │   ├── transactions/audit/resolve/route.ts  # Audit: persist resolutions
@@ -60,9 +65,14 @@ creditspendanalyser/
 │   ├── audit-results-view.tsx          # Audit results view (disagreements + matches)
 │   ├── audit-response-parser.ts        # Runtime parser for /audit/sample response
 │   ├── audit-types.ts                  # Shared audit types
+│   ├── card-badge.tsx                  # Tinted card-type label using CARD_COLORS
 │   ├── category-badge.tsx              # Tinted category label using CATEGORY_COLORS
 │   ├── dashboard-filters.tsx           # Date range + card type filter bar
 │   ├── insight-charts.tsx              # Dashboard chart components
+│   ├── recurring-add-dialog.tsx        # "Add recurring" dialog (manual include action)
+│   ├── recurring-alerts.tsx            # Alert banner cards on the recurring page
+│   ├── recurring-items-table.tsx       # Recurring items table + row actions
+│   ├── recurring-override-dialog.tsx   # Frequency-override dialog
 │   └── upload-review-table.tsx         # Upload review table with inline category editing
 ├── hooks/                              # Custom React hooks
 ├── lib/
@@ -85,6 +95,7 @@ creditspendanalyser/
 │   │   ├── category-mapper.ts         # Per-issuer category → app-category dispatch (Tier 1)
 │   │   ├── categorizer.ts             # Tiered categorization (override/source/rule/AI)
 │   │   ├── extraction-pipeline.ts     # parseAndPreview() + confirmAndSave()
+│   │   ├── recurring-detector.ts      # Pure recurring detection (clustering + scoring + alerts)
 │   │   └── issuer-adapters/           # Per-issuer StructuredRow → ExtractedTransaction
 │   │       ├── types.ts               # RowAdapter type
 │   │       ├── discover.ts            # Discover-style sign convention
@@ -94,7 +105,8 @@ creditspendanalyser/
 │       ├── users.ts
 │       ├── statements.ts
 │       ├── transactions.ts
-│       └── category-overrides.ts       # Persisted user category corrections
+│       ├── category-overrides.ts       # Persisted user category corrections
+│       └── recurring.ts                # Recurring detection + override CRUD
 ├── types/
 │   └── index.ts                        # Shared TypeScript types
 ├── scripts/
@@ -283,6 +295,8 @@ The app uses **MongoDB** via the native Node.js driver (not Mongoose).
 | `users` | User accounts (username, passwordHash) |
 | `statements` | Uploaded statement metadata (card type, file format, dates) |
 | `transactions` | Individual transactions (merchant, amount, category, card type) |
+| `category_overrides` | Persisted merchant → category corrections (re-applied on future uploads) |
+| `recurring_overrides` | User decisions for recurring detection (include / dismiss / frequency_override) |
 
 ### Collection access pattern
 

@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { CreditCard, FileText, History, LayoutDashboard, ListOrdered, LogOut, Upload } from "lucide-react";
+import { CreditCard, FileText, History, LayoutDashboard, ListOrdered, LogOut, Repeat, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 const NAV = [
@@ -23,6 +23,7 @@ const NAV = [
   { href: "/upload", label: "Upload", icon: Upload },
   { href: "/uploads", label: "Uploads", icon: History },
   { href: "/transactions", label: "Transactions", icon: ListOrdered },
+  { href: "/recurring", label: "Recurring", icon: Repeat },
   { href: "/reports", label: "Reports", icon: FileText },
 ];
 
