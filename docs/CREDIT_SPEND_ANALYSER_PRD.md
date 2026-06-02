@@ -5,19 +5,19 @@
 |---|---|
 | **Product** | Credit Spend Analyser |
 | **Version** | 1.0 (Shipped) |
-| **Author** | [Your Name] |
-| **Status** | Live — personal finance analytics platform |
+| **Author** | Mustafa Saifee |
+| **Status** | Live, personal finance analytics platform |
 | **Last updated** | June 2026 |
 
 ---
 
 ## Executive summary
 
-**Credit Spend Analyser** is a full-stack web application that turns messy credit card statements into actionable spending intelligence. Users upload statements in whatever format their bank provides—PDF, spreadsheet, or even a photo—and the product extracts transactions, normalizes merchants, categorizes spend across a unified taxonomy, and surfaces insights on a personal dashboard.
+**Credit Spend Analyser** is a full-stack web application that turns messy credit card statements into actionable spending intelligence. Users upload statements in whatever format their bank provides (PDF, spreadsheet, or even a photo), and the product extracts transactions, normalizes merchants, categorizes spend across a unified taxonomy, and surfaces insights on a personal dashboard.
 
-The product was built to solve a real gap: most people hold multiple cards from different issuers, each with its own export format and category labels. Manual spreadsheet work is tedious, error-prone, and doesn’t scale. This app automates ingestion while keeping the human in control—review before save, correct categories once, and the system learns for next time.
+The product was built to solve a real gap: most people hold multiple cards from different issuers, each with its own export format and category labels. Manual spreadsheet work is tedious, error-prone, and doesn’t scale. This app automates ingestion while keeping the human in control: review before save, correct categories once, and the system learns for next time.
 
-**Why it matters as a product:** It combines document understanding, cost-conscious AI orchestration, a learning categorization engine, and analytics UX in one cohesive experience—not a demo script, but an end-to-end system with auth, persistence, exports, and quality workflows.
+**Why it matters as a product:** It combines document understanding, cost-conscious AI orchestration, a learning categorization engine, and analytics UX in one cohesive experience, not a demo script, but an end-to-end system with auth, persistence, exports, and quality workflows.
 
 ---
 
@@ -35,7 +35,7 @@ The product was built to solve a real gap: most people hold multiple cards from 
 
 ### Opportunity
 
-Personal finance is a recurring job-to-be-done: **ingest → understand → decide**. Existing apps often require bank linking (privacy concern) or manual entry. Statement-upload workflows respect user data ownership while still delivering automation—if extraction and categorization are reliable enough to trust after review.
+Personal finance is a recurring job-to-be-done: **ingest → understand → decide**. Existing apps often require bank linking (privacy concern) or manual entry. Statement-upload workflows respect user data ownership while still delivering automation if extraction and categorization are reliable enough to trust after review.
 
 ### Product hypothesis
 
@@ -64,11 +64,11 @@ Personal finance is a recurring job-to-be-done: **ingest → understand → deci
 
 ### Vision
 
-*Make every credit card statement as easy to analyze as a well-structured spreadsheet—without building the spreadsheet.*
+*Make every credit card statement as easy to analyze as a well-structured spreadsheet, without building the spreadsheet.*
 
 ### North-star metric
 
-**Time from upload to trusted insight** — measured as: upload → review → confirm → dashboard visible with correct category breakdown.
+**Time from upload to trusted insight**, measured as: upload → review → confirm → dashboard visible with correct category breakdown.
 
 ### Product goals (v1)
 
@@ -104,16 +104,16 @@ flowchart LR
 2. On **Upload**, they drag a Discover CSV (or Chase PDF, Amex image, etc.).
 3. System detects card type, extracts rows, applies tiered categorization, and shows a **preview table** with source badges (issuer map, rule, override, AI, manual).
 4. User fixes any miscategorized merchants; bulk propagation updates all matching rows in the preview.
-5. User optionally triggers **AI categorize** for remaining “Other” debits (batched, user-initiated—cost control).
+5. User optionally triggers **AI categorize** for remaining “Other” debits (batched, user-initiated, for cost control).
 6. User **confirms**; statement and transactions persist; overrides are saved for future uploads.
 7. **Dashboard** reflects new data: category donut, monthly trend, card comparison, top merchants, MoM delta.
 
 ### Journey 2: Quality check on historical data
 
 1. User opens **Transactions**, filters by card or category.
-2. They launch **Category Audit**—a sampled review of transactions prioritized by never-audited or stale-audit rows.
+2. They launch **Category Audit**, a sampled review of transactions prioritized by never-audited or stale-audit rows.
 3. AI suggests whether each categorization looks correct; user accepts, reassigns, or skips.
-4. Accepted corrections upsert **merchant overrides** and update stored transactions—improving both history and future ingest.
+4. Accepted corrections upsert **merchant overrides** and update stored transactions, improving both history and future ingest.
 
 ### Journey 3: Export for external use
 
@@ -217,35 +217,40 @@ High-level architecture for stakeholders who want to see how the pieces connect:
 
 ```mermaid
 flowchart TB
-  subgraph client [Web App - Next.js]
-    UI[Dashboard / Upload / Transactions / Reports]
+  subgraph client ["Web App (Next.js)"]
+    UI["Dashboard, Upload, Transactions, Reports"]
   end
 
-  subgraph api [API Layer]
-    Auth[/api/auth]
-    Parse[/api/upload/parse]
-    Cat[/api/upload/categorize]
-    Confirm[/api/upload/confirm]
-    Insights[/api/insights]
-    Export[/api/export]
-    Audit[/api/transactions/audit]
+  subgraph api ["API Layer"]
+    Auth["api/auth"]
+    Parse["api/upload/parse"]
+    Cat["api/upload/categorize"]
+    Confirm["api/upload/confirm"]
+    Insights["api/insights"]
+    Export["api/export"]
+    Audit["api/transactions/audit"]
   end
 
-  subgraph intelligence [Intelligence Layer]
-    Parsers[PDF / CSV / XLS / Image parsers]
-    Detect[Card detector - rules + LLM]
-    Extract[GPT-4o Mini extraction]
-    Categorize[Tiered categorizer]
-    Overrides[Merchant override store]
+  subgraph intelligence ["Intelligence Layer"]
+    Parsers["PDF, CSV, XLS, Image parsers"]
+    Detect["Card detector (rules + LLM)"]
+    Extract["GPT-4o Mini extraction"]
+    Categorize["Tiered categorizer"]
+    Overrides["Merchant override store"]
   end
 
-  subgraph data [Data Layer]
+  subgraph data ["Data Layer"]
     Mongo[(MongoDB)]
   end
 
-  UI --> api
-  Parse --> Parsers --> Detect --> Extract
-  Parse --> Categorize --> Overrides
+  UI --> Parse
+  UI --> Insights
+  UI --> Export
+  Parse --> Parsers
+  Parsers --> Detect
+  Detect --> Extract
+  Parse --> Categorize
+  Categorize --> Overrides
   Confirm --> Mongo
   Insights --> Mongo
   Export --> Mongo
@@ -253,10 +258,10 @@ flowchart TB
 
 ### Data model (conceptual)
 
-- **Users** — credentials and ownership boundary  
-- **Statements** — one record per uploaded file (card, format, date, totals, upload stats)  
-- **Transactions** — normalized line items linked to statement and user  
-- **Category overrides** — merchant key → category (issuer-agnostic learning)
+- **Users**: credentials and ownership boundary  
+- **Statements**: one record per uploaded file (card, format, date, totals, upload stats)  
+- **Transactions**: normalized line items linked to statement and user  
+- **Category overrides**: merchant key → category (issuer-agnostic learning)
 
 ---
 
@@ -324,7 +329,7 @@ For a portfolio or live deployment, these would validate product-market fit:
 
 ---
 
-## Launch criteria (v1 — met)
+## Launch criteria (v1, met)
 
 - [x] End-to-end flow: login → upload → review → confirm → dashboard  
 - [x] At least 4 card types with detection and parsing paths  
@@ -357,4 +362,4 @@ Groceries · Dining · Gas/Fuel · Entertainment · Shopping · Travel · Subscr
 
 ---
 
-*This document describes a shipped product built as a solo end-to-end initiative: product definition, UX, backend pipeline, AI integration, data model, and deployment considerations. Replace **[Your Name]** and add a live demo URL or screenshots when publishing to your portfolio.*
+*This document describes a shipped product built by Mustafa Saifee as a solo end-to-end initiative: product definition, UX, backend pipeline, AI integration, data model, and deployment considerations.*
