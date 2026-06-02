@@ -1,8 +1,9 @@
 /**
- * CLI: npx tsx scripts/seed-user.ts --username <name> --password <pw>
+ * CLI: npx tsx scripts/reset-password.ts --username <name> --password <pw>
+ * Updates the password hash for an existing user. Password is never logged.
  */
 import { config } from "dotenv";
-import { createUser } from "@/lib/models/users";
+import { findUserByUsername, updatePasswordByUsername } from "@/lib/models/users";
 
 config({ path: ".env.local" });
 
@@ -29,11 +30,20 @@ async function main() {
   const username = args.username;
   const password = args.password;
   if (!username || !password) {
-    console.error("Usage: tsx scripts/seed-user.ts --username <name> --password <pw>");
+    console.error("Usage: tsx scripts/reset-password.ts --username <name> --password <pw>");
     process.exit(1);
   }
-  const user = await createUser(username, password);
-  console.log(`Created user ${user.username} (${user._id.toString()})`);
+  const user = await findUserByUsername(username);
+  if (!user) {
+    console.error(`User not found: ${username}`);
+    process.exit(1);
+  }
+  const ok = await updatePasswordByUsername(username, password);
+  if (!ok) {
+    console.error("Password update failed.");
+    process.exit(1);
+  }
+  console.log(`Password updated for user ${username}`);
   process.exit(0);
 }
 

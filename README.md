@@ -19,7 +19,7 @@ A full-stack credit-card spend analysis dashboard built on Next.js 16, ShadCN UI
 2. Create your first user:
 
    ```bash
-   npx tsx scripts/seed-user.ts --username admin --password yourpassword
+   npx tsx scripts/seed-user.ts --username admin --password <your-password>
    ```
 
 3. Run the dev server:
@@ -30,12 +30,19 @@ A full-stack credit-card spend analysis dashboard built on Next.js 16, ShadCN UI
 
    Open [http://localhost:3000](http://localhost:3000) and sign in.
 
+4. If you have transactions imported before dedupe support, backfill keys once:
+
+   ```bash
+   npm run backfill:dedupe
+   ```
+
 ## Features
 
 - **Multi-format upload**: PDF, CSV, XLS/XLSX, JPG/PNG (≤ 20 MB)
 - **Auto card detection**: rule-based first, falls back to LLM if ambiguous
 - **GPT-4o Mini extraction**: structured JSON output with vision support for images
 - **Hybrid categorization**: merchant-rule first pass, GPT for ambiguous merchants
+- **Overlap-safe uploads**: re-importing overlapping statement periods skips duplicate transactions automatically
 - **Insights**: category breakdown, monthly trend, card comparison, top merchants, MoM change
 - **Reports**: filterable CSV/PDF export, statement history
 - **Auth**: bcrypt-hashed users, jose-signed JWT cookie, `proxy.ts` guards every route
