@@ -167,7 +167,11 @@ function detectFromCluster(
   // Pick the most recent category in the cluster as the item's category.
   const category = sorted[sorted.length - 1].category;
 
+  const firstSeen = toIso(dates[0]);
+  const id = `${group.merchant}::${group.type}::${amountMean.toFixed(2)}::${firstSeen}`;
+
   return {
+    id,
     merchant: group.merchant,
     type: group.type,
     averageAmount: amountMean,
@@ -175,7 +179,7 @@ function detectFromCluster(
     frequency,
     confidence,
     transactionCount: sorted.length,
-    firstSeen: toIso(dates[0]),
+    firstSeen,
     lastSeen: toIso(lastDate),
     nextExpected: toIso(nextExpectedDate),
     category,

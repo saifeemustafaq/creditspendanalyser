@@ -33,7 +33,7 @@ const STATUS_VARIANTS: Record<RecurringStatus, "default" | "secondary" | "destru
 interface Props {
   items: RecurringItem[];
   loading: boolean;
-  dismissingMerchant: string | null;
+  dismissingItemId: string | null;
   onOverride: (item: RecurringItem) => void;
   onDismiss: (item: RecurringItem) => void;
 }
@@ -41,7 +41,7 @@ interface Props {
 export function RecurringItemsTable({
   items,
   loading,
-  dismissingMerchant,
+  dismissingItemId,
   onOverride,
   onDismiss,
 }: Props) {
@@ -85,7 +85,7 @@ export function RecurringItemsTable({
               </TableRow>
             ) : (
               items.map((item) => (
-                <TableRow key={`${item.merchant}-${item.type}`}>
+                <TableRow key={item.id}>
                   <TableCell>
                     <div className="font-medium">{item.merchant}</div>
                     <div className="text-xs text-muted-foreground capitalize">
@@ -147,7 +147,7 @@ export function RecurringItemsTable({
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={dismissingMerchant === item.merchant}
+                        disabled={dismissingItemId === item.id}
                         onClick={() => onDismiss(item)}
                         aria-label={`Dismiss ${item.merchant}`}
                       >

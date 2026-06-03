@@ -158,6 +158,8 @@ export interface RecurringOverrideDoc {
 }
 
 export interface RecurringItem {
+  /** Stable row id (merchant + type + amount cluster + first seen). */
+  id: string;
   merchant: string;
   averageAmount: number;
   lastAmount: number;
