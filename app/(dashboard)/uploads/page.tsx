@@ -64,15 +64,25 @@ function CategorizationBadges({ stats }: { stats?: UploadStats }) {
   const entries = (Object.entries(stats.categorization) as [CategorizationMethod, number][])
     .filter(([, count]) => count > 0)
     .sort((a, b) => b[1] - a[1]);
+  const skippedDup = stats.rowsSkippedDuplicate ?? 0;
+  const skippedFile = stats.rowsSkippedInFile ?? 0;
   return (
-    <div className="flex flex-wrap gap-1">
-      {entries.map(([method, count]) => (
-        <Badge key={method} variant={METHOD_VARIANTS[method]}>
-          {METHOD_LABELS[method]} {count}
-        </Badge>
-      ))}
-      {stats.uncategorized > 0 && (
-        <Badge variant="destructive">Other {stats.uncategorized}</Badge>
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap gap-1">
+        {entries.map(([method, count]) => (
+          <Badge key={method} variant={METHOD_VARIANTS[method]}>
+            {METHOD_LABELS[method]} {count}
+          </Badge>
+        ))}
+        {stats.uncategorized > 0 && (
+          <Badge variant="destructive">Other {stats.uncategorized}</Badge>
+        )}
+      </div>
+      {(skippedDup > 0 || skippedFile > 0) && (
+        <span className="text-xs text-muted-foreground">
+          Skipped {skippedDup + skippedFile} duplicate
+          {skippedDup + skippedFile === 1 ? "" : "s"}
+        </span>
       )}
     </div>
   );

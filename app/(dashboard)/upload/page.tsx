@@ -48,20 +48,42 @@ function parseAICategorizeResults(value: unknown): AICategorizeResultRow[] {
   return out;
 }
 
+function parseDuplicateSummary(value: unknown): DuplicateSummary {
+  if (!value || typeof value !== "object") {
+    return { existing: 0, inFile: 0, newCount: 0 };
+  }
+  const o = value as Record<string, unknown>;
+  return {
+    existing: typeof o.existing === "number" ? o.existing : 0,
+    inFile: typeof o.inFile === "number" ? o.inFile : 0,
+    newCount: typeof o.newCount === "number" ? o.newCount : 0,
+  };
+}
+
+interface DuplicateSummary {
+  existing: number;
+  inFile: number;
+  newCount: number;
+}
+
 interface PreviewState {
   originalFilename: string;
   cardType: CardType;
   fileFormat: FileFormat;
   statementDate: string | null;
   transactions: PreviewTransaction[];
+  duplicateSummary: DuplicateSummary;
 }
 
 interface ConfirmResult {
-  statementId: string;
+  statementId: string | null;
   transactionCount: number;
   totalAmount: number;
   cardType: CardType;
   statementDate: string | null;
+  rowsSkippedDuplicate: number;
+  rowsSkippedInFile: number;
+  allDuplicates: boolean;
 }
 
 type Step = "upload" | "review" | "done";
@@ -81,7 +103,8 @@ export default function UploadPage() {
   const uncategorizedCount = useMemo(() => {
     if (!preview) return 0;
     return preview.transactions.filter(
-      (t) => t.category === "Other" && t.type === "debit",
+      (t) =>
+        !t.isDuplicate && t.category === "Other" && t.type === "debit",
     ).length;
   }, [preview]);
 
@@ -105,15 +128,21 @@ export default function UploadPage() {
         toast.error(data.error ?? "Parse failed");
         return;
       }
+      const duplicateSummary = parseDuplicateSummary(data.duplicateSummary);
       setPreview({
         originalFilename: data.originalFilename ?? file.name,
         cardType: data.cardType,
         fileFormat: data.fileFormat,
         statementDate: data.statementDate,
-        transactions: data.transactions,
+        transactions: data.transactions ?? [],
+        duplicateSummary,
       });
       setStep("review");
-      toast.success(`Parsed ${data.transactions.length} transactions`);
+      const dupMsg =
+        duplicateSummary.existing + duplicateSummary.inFile > 0
+          ? ` · ${duplicateSummary.newCount} new, ${duplicateSummary.existing + duplicateSummary.inFile} skipped`
+          : "";
+      toast.success(`Parsed ${data.transactions?.length ?? 0} transactions${dupMsg}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Parse failed");
     } finally {
@@ -152,6 +181,7 @@ export default function UploadPage() {
     if (!preview) return;
     const ambiguousIndexes: number[] = [];
     preview.transactions.forEach((t, i) => {
+      if (t.isDuplicate) return;
       if (t.category === "Other" && t.type === "debit") ambiguousIndexes.push(i);
     });
     if (ambiguousIndexes.length === 0) return;
@@ -278,14 +308,23 @@ export default function UploadPage() {
         return;
       }
       setResult({
-        statementId: data.statementId,
-        transactionCount: data.transactionCount,
-        totalAmount: data.totalAmount,
+        statementId: data.statementId ?? null,
+        transactionCount: data.transactionCount ?? 0,
+        totalAmount: data.totalAmount ?? 0,
         cardType: preview.cardType,
         statementDate: preview.statementDate,
+        rowsSkippedDuplicate: data.rowsSkippedDuplicate ?? 0,
+        rowsSkippedInFile: data.rowsSkippedInFile ?? 0,
+        allDuplicates: Boolean(data.allDuplicates),
       });
       setStep("done");
-      toast.success(`Saved ${data.transactionCount} transactions`);
+      if (data.allDuplicates) {
+        toast.info("All transactions were already imported");
+      } else {
+        const skipped = (data.rowsSkippedDuplicate ?? 0) + (data.rowsSkippedInFile ?? 0);
+        const skipMsg = skipped > 0 ? ` · skipped ${skipped} duplicates` : "";
+        toast.success(`Saved ${data.transactionCount} transactions${skipMsg}`);
+      }
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
@@ -381,9 +420,10 @@ export default function UploadPage() {
                 </Badge>
               </h3>
               <p className="text-sm text-muted-foreground">
+                {preview.duplicateSummary.newCount} new of{" "}
                 {preview.transactions.length} parsed from{" "}
-                {preview.originalFilename}. Edit any category before saving —
-                manual changes are remembered for future uploads.
+                {preview.originalFilename}. Edit categories for new rows before
+                saving — manual changes are remembered for future uploads.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -438,21 +478,53 @@ export default function UploadPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Statement imported
+              {result.allDuplicates
+                ? "Nothing new to import"
+                : "Statement imported"}
               <Badge variant="secondary">{CARD_LABELS[result.cardType]}</Badge>
             </CardTitle>
             <CardDescription>
-              {result.transactionCount} transactions ·{" "}
-              {fmtCurrency(result.totalAmount)} total spend
-              {result.statementDate
-                ? ` · statement dated ${new Date(result.statementDate).toLocaleDateString()}`
-                : ""}
+              {result.allDuplicates ? (
+                <>
+                  Every transaction in this file is already in your database.
+                  {(result.rowsSkippedDuplicate > 0 ||
+                    result.rowsSkippedInFile > 0) && (
+                    <>
+                      {" "}
+                      Skipped {result.rowsSkippedDuplicate + result.rowsSkippedInFile}{" "}
+                      duplicate
+                      {result.rowsSkippedDuplicate + result.rowsSkippedInFile === 1
+                        ? ""
+                        : "s"}
+                      .
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  Saved {result.transactionCount} transactions ·{" "}
+                  {fmtCurrency(result.totalAmount)} total spend
+                  {(result.rowsSkippedDuplicate > 0 ||
+                    result.rowsSkippedInFile > 0) && (
+                    <>
+                      {" "}
+                      · skipped {result.rowsSkippedDuplicate + result.rowsSkippedInFile}{" "}
+                      duplicates
+                    </>
+                  )}
+                  {result.statementDate
+                    ? ` · statement dated ${new Date(result.statementDate).toLocaleDateString()}`
+                    : ""}
+                </>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex gap-2">
-            <Button onClick={() => router.push("/transactions")}>
-              View transactions
-            </Button>
+            {!result.allDuplicates && (
+              <Button onClick={() => router.push("/transactions")}>
+                View transactions
+              </Button>
+            )}
             <Button variant="outline" onClick={startOver}>
               Upload another
             </Button>

@@ -37,3 +37,15 @@ export async function createUser(username: string, password: string): Promise<Us
 export async function validatePassword(user: UserDoc, password: string): Promise<boolean> {
   return bcrypt.compare(password, user.passwordHash);
 }
+
+export async function updatePasswordByUsername(
+  username: string,
+  password: string,
+): Promise<boolean> {
+  const db = await getDb();
+  const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+  const result = await db
+    .collection<UserDoc>(COLLECTIONS.users)
+    .updateOne({ username }, { $set: { passwordHash } });
+  return result.matchedCount > 0;
+}

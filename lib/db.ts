@@ -28,3 +28,12 @@ export const COLLECTIONS = {
   categoryOverrides: "category_overrides",
   recurringOverrides: "recurring_overrides",
 } as const;
+
+/** Sparse unique index: one stored row per dedupeKey per user (legacy rows omit dedupeKey). */
+export async function ensureTransactionIndexes(): Promise<void> {
+  const db = await getDb();
+  await db.collection(COLLECTIONS.transactions).createIndex(
+    { userId: 1, dedupeKey: 1 },
+    { unique: true, sparse: true, name: "userId_dedupeKey_unique" },
+  );
+}

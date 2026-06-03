@@ -95,6 +95,7 @@ creditspendanalyser/
 │   │   ├── category-mapper.ts         # Per-issuer category → app-category dispatch (Tier 1)
 │   │   ├── categorizer.ts             # Tiered categorization (override/source/rule/AI)
 │   │   ├── extraction-pipeline.ts     # parseAndPreview() + confirmAndSave()
+│   │   ├── transaction-dedupe.ts      # dedupeKey + overlap detection for uploads
 │   │   ├── recurring-detector.ts      # Pure recurring detection (clustering + scoring + alerts)
 │   │   └── issuer-adapters/           # Per-issuer StructuredRow → ExtractedTransaction
 │   │       ├── types.ts               # RowAdapter type
@@ -110,7 +111,9 @@ creditspendanalyser/
 ├── types/
 │   └── index.ts                        # Shared TypeScript types
 ├── scripts/
-│   └── seed-user.ts                    # CLI to create user in MongoDB
+│   ├── seed-user.ts                    # CLI to create user in MongoDB
+│   ├── reset-password.ts               # CLI to update a user's password hash
+│   └── backfill-dedupe-keys.ts         # One-time dedupeKey backfill + index
 ├── proxy.ts                            # Auth guard (Next.js 16 convention)
 ├── components.json                     # ShadCN configuration
 ├── tsconfig.json
@@ -294,7 +297,7 @@ The app uses **MongoDB** via the native Node.js driver (not Mongoose).
 |-----------|---------|
 | `users` | User accounts (username, passwordHash) |
 | `statements` | Uploaded statement metadata (card type, file format, dates) |
-| `transactions` | Individual transactions (merchant, amount, category, card type) |
+| `transactions` | Individual transactions (merchant, amount, category, card type, optional `dedupeKey`) |
 | `category_overrides` | Persisted merchant → category corrections (re-applied on future uploads) |
 | `recurring_overrides` | User decisions for recurring detection (include / dismiss / frequency_override) |
 
@@ -320,6 +323,15 @@ The database name defaults to `"credit-spend"` and can be overridden via the `MO
 - **Separate collections** — Users, statements, and transactions are separate collections linked by `userId` and `statementId` (ObjectId references).
 - **Required fields** — Every document has `_id` (ObjectId) and appropriate foreign keys.
 - **Schema evolution** — MongoDB is schema-less, but TypeScript types are the schema. When adding fields, make them optional and handle missing fields gracefully in code.
+
+### Transaction deduplication (overlapping uploads)
+
+- **`dedupeKey`** — Stable fingerprint on each transaction: `cardType`, dates (ISO day strings), `type`, amount in cents, normalized merchant, and a hash of `rawDescription`. Computed in [`lib/services/transaction-dedupe.ts`](lib/services/transaction-dedupe.ts).
+- **Parse** — `parseAndPreview()` marks rows `isDuplicate` / `duplicateReason` (`existing` | `in_file`) for the review UI.
+- **Confirm** — `confirmAndSave()` skips duplicates (keeps existing DB rows). No statement record is created if every row is a duplicate (`allDuplicates`).
+- **Index** — Sparse unique `{ userId: 1, dedupeKey: 1 }` via `ensureTransactionIndexes()` in [`lib/db.ts`](lib/db.ts). Legacy rows without `dedupeKey` are ignored by the index until backfilled.
+- **Backfill** — Run `npm run backfill:dedupe` once on databases that already had transactions before this feature. Resolve any reported key collisions (true duplicate rows from past double uploads) before relying on the unique index.
+- **Tradeoff** — Two distinct purchases with identical date, amount, merchant, and raw line on the same card will be treated as one; rare in practice.
 
 ---
 
@@ -506,7 +518,8 @@ The upload flow is orchestrated by `lib/services/extraction-pipeline.ts`:
 2. **Detect card type** — Regex/keyword-based first, GPT fallback for ambiguous cases (`lib/services/card-detector.ts`).
 3. **Extract transactions** — Card-type-specific GPT-4o Mini prompts for structured JSON output (`lib/services/extractor.ts`).
 4. **Categorize transactions** — Rule-based matching first, GPT batch fallback for ambiguous merchants (`lib/services/categorizer.ts`).
-5. **Store in MongoDB** — Save statement + transactions.
+5. **Detect duplicates** — Compare against existing `dedupeKey` values and within-file repeats (`lib/services/transaction-dedupe.ts`).
+6. **Store in MongoDB** — Save statement + new transactions only; record skip counts in `uploadStats`.
 
 ### Card types
 

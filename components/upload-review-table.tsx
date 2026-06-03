@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -55,17 +55,33 @@ function methodVariant(
 
 type IndexedRow = { originalIndex: number; tx: PreviewTransaction };
 
+function duplicateBadge(tx: PreviewTransaction) {
+  if (!tx.isDuplicate) return null;
+  const label =
+    tx.duplicateReason === "in_file" ? "Duplicate in file" : "Already imported";
+  return (
+    <Badge variant="outline" className="text-xs">
+      {label}
+    </Badge>
+  );
+}
+
 function TransactionTableRows({
   rows,
   onChangeCategory,
+  readOnly = false,
 }: {
   rows: IndexedRow[];
   onChangeCategory: (index: number, category: Category) => void;
+  readOnly?: boolean;
 }) {
   return (
     <>
       {rows.map(({ originalIndex, tx }) => (
-        <TableRow key={originalIndex}>
+        <TableRow
+          key={originalIndex}
+          className={readOnly ? "opacity-60" : undefined}
+        >
           <TableCell className="whitespace-nowrap">
             {fmtDate(tx.transactionDate)}
           </TableCell>
@@ -77,28 +93,35 @@ function TransactionTableRows({
             {tx.rawDescription.split(/\r?\n/)[0]}
           </TableCell>
           <TableCell>
-            <Select
-              value={tx.category}
-              onValueChange={(v) =>
-                v && onChangeCategory(originalIndex, v as Category)
-              }
-            >
-              <SelectTrigger className="w-[150px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {readOnly ? (
+              <span className="text-xs">{tx.category}</span>
+            ) : (
+              <Select
+                value={tx.category}
+                onValueChange={(v) =>
+                  v && onChangeCategory(originalIndex, v as Category)
+                }
+              >
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </TableCell>
           <TableCell>
-            <Badge variant={methodVariant(tx.categorizedBy)}>
-              {METHOD_LABEL[tx.categorizedBy]}
-            </Badge>
+            <div className="flex flex-wrap items-center gap-1">
+              <Badge variant={methodVariant(tx.categorizedBy)}>
+                {METHOD_LABEL[tx.categorizedBy]}
+              </Badge>
+              {duplicateBadge(tx)}
+            </div>
           </TableCell>
           <TableCell
             className={cn(
@@ -146,38 +169,84 @@ export function UploadReviewTable({
   aiLoading,
   aiSummary,
 }: UploadReviewTableProps) {
-  const { uncategorized, categorized, summary } = useMemo(() => {
-    const uncat: IndexedRow[] = [];
-    const cat: IndexedRow[] = [];
-    let totalSpend = 0;
-    const counts: Record<CategorizationMethod, number> = {
-      source_map: 0,
-      user_override: 0,
-      rule: 0,
-      ai: 0,
-      user: 0,
-    };
+  const [showDuplicates, setShowDuplicates] = useState(false);
 
-    rows.forEach((tx, i) => {
-      if (tx.type === "debit") totalSpend += tx.amount;
-      counts[tx.categorizedBy]++;
+  const { uncategorized, categorized, duplicates, duplicateCounts, summary } =
+    useMemo(() => {
+      const uncat: IndexedRow[] = [];
+      const cat: IndexedRow[] = [];
+      const dup: IndexedRow[] = [];
+      let totalSpend = 0;
+      let skippedExisting = 0;
+      let skippedInFile = 0;
+      const counts: Record<CategorizationMethod, number> = {
+        source_map: 0,
+        user_override: 0,
+        rule: 0,
+        ai: 0,
+        user: 0,
+      };
 
-      if (tx.category === "Other" && tx.type === "debit") {
-        uncat.push({ originalIndex: i, tx });
-      } else {
-        cat.push({ originalIndex: i, tx });
-      }
-    });
+      rows.forEach((tx, i) => {
+        if (tx.isDuplicate) {
+          dup.push({ originalIndex: i, tx });
+          if (tx.duplicateReason === "in_file") skippedInFile += 1;
+          else skippedExisting += 1;
+          return;
+        }
+        if (tx.type === "debit") totalSpend += tx.amount;
+        counts[tx.categorizedBy]++;
 
-    return {
-      uncategorized: uncat,
-      categorized: cat,
-      summary: { totalSpend, counts, total: rows.length },
-    };
-  }, [rows]);
+        if (tx.category === "Other" && tx.type === "debit") {
+          uncat.push({ originalIndex: i, tx });
+        } else {
+          cat.push({ originalIndex: i, tx });
+        }
+      });
+
+      const newCount = rows.length - dup.length;
+      return {
+        uncategorized: uncat,
+        categorized: cat,
+        duplicates: dup,
+        duplicateCounts: { skippedExisting, skippedInFile, newCount },
+        summary: { totalSpend, counts, total: newCount },
+      };
+    }, [rows]);
+
+  const dupTotal = duplicates.length;
 
   return (
     <div className="space-y-6">
+      {dupTotal > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
+          <p className="text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {duplicateCounts.newCount} new
+            </span>
+            {duplicateCounts.skippedExisting > 0 && (
+              <>
+                {" "}
+                · {duplicateCounts.skippedExisting} already imported
+              </>
+            )}
+            {duplicateCounts.skippedInFile > 0 && (
+              <>
+                {" "}
+                · {duplicateCounts.skippedInFile} duplicate{" "}
+                {duplicateCounts.skippedInFile === 1 ? "line" : "lines"} in file
+              </>
+            )}
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDuplicates((v) => !v)}
+          >
+            {showDuplicates ? "Hide skipped" : `Show skipped (${dupTotal})`}
+          </Button>
+        </div>
+      )}
       {/* AI Summary Banner */}
       {aiSummary && (
         <div className="flex items-start gap-3 rounded-md border border-blue-500/30 bg-blue-50/50 px-4 py-3 dark:bg-blue-950/20">
@@ -289,11 +358,31 @@ export function UploadReviewTable({
         </div>
       )}
 
+      {showDuplicates && dupTotal > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-muted-foreground">
+            Skipped duplicates ({dupTotal})
+          </h3>
+          <div className="rounded-md border">
+            <Table>
+              <TransactionTableHeader />
+              <TableBody>
+                <TransactionTableRows
+                  rows={duplicates}
+                  onChangeCategory={onChangeCategory}
+                  readOnly
+                />
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      )}
+
       {/* Summary bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-sm">
         <div>
           <span className="font-medium">{summary.total}</span>{" "}
-          <span className="text-muted-foreground">transactions</span>{" "}
+          <span className="text-muted-foreground">new transactions</span>{" "}
           <span className="text-muted-foreground">·</span>{" "}
           <span className="font-medium">{fmtCurrency(summary.totalSpend)}</span>{" "}
           <span className="text-muted-foreground">total spend</span>

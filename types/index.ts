@@ -72,6 +72,9 @@ export interface UserDoc {
 export interface UploadStats {
   rowsParsed: number;
   rowsSaved: number;
+  /** Omitted on statements uploaded before dedupe support. */
+  rowsSkippedDuplicate?: number;
+  rowsSkippedInFile?: number;
   categorization: Partial<Record<CategorizationMethod, number>>;
   uncategorized: number;
 }
@@ -105,6 +108,7 @@ export interface TransactionDoc {
   sourceCategory?: string | null;
   categorizedBy?: CategorizationMethod;
   lastAuditedAt?: Date;
+  dedupeKey?: string;
 }
 
 export interface ExtractedTransaction {
@@ -154,6 +158,8 @@ export interface RecurringOverrideDoc {
 }
 
 export interface RecurringItem {
+  /** Stable row id (merchant + type + amount cluster + first seen). */
+  id: string;
   merchant: string;
   averageAmount: number;
   lastAmount: number;

@@ -69,7 +69,7 @@ function RecurringView() {
   const loading = data === null || loadedKey !== filterKey;
 
   const [overrideTarget, setOverrideTarget] = useState<RecurringItem | null>(null);
-  const [dismissingMerchant, setDismissingMerchant] = useState<string | null>(null);
+  const [dismissingItemId, setDismissingItemId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
@@ -137,7 +137,7 @@ function RecurringView() {
   );
 
   const dismissItem = useCallback(async (item: RecurringItem) => {
-    setDismissingMerchant(item.merchant);
+    setDismissingItemId(item.id);
     try {
       const res = await fetch("/api/recurring/overrides", {
         method: "POST",
@@ -158,7 +158,7 @@ function RecurringView() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to dismiss");
     } finally {
-      setDismissingMerchant(null);
+      setDismissingItemId(null);
     }
   }, []);
 
@@ -259,7 +259,7 @@ function RecurringView() {
       <RecurringItemsTable
         items={visibleItems}
         loading={loading}
-        dismissingMerchant={dismissingMerchant}
+        dismissingItemId={dismissingItemId}
         onOverride={setOverrideTarget}
         onDismiss={dismissItem}
       />

@@ -17,6 +17,27 @@ export interface InsertTransactionInput {
   rawDescription: string;
   sourceCategory?: string | null;
   categorizedBy?: CategorizationMethod;
+  dedupeKey: string;
+}
+
+export async function findExistingDedupeKeys(
+  userId: string,
+  keys: string[],
+): Promise<Set<string>> {
+  if (keys.length === 0) return new Set();
+  const db = await getDb();
+  const docs = await db
+    .collection<TransactionDoc>(COLLECTIONS.transactions)
+    .find(
+      { userId: new ObjectId(userId), dedupeKey: { $in: keys } },
+      { projection: { dedupeKey: 1 } },
+    )
+    .toArray();
+  const found = new Set<string>();
+  for (const d of docs) {
+    if (d.dedupeKey) found.add(d.dedupeKey);
+  }
+  return found;
 }
 
 export async function insertTransactions(rows: InsertTransactionInput[]): Promise<number> {
