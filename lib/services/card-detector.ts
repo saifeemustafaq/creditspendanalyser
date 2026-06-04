@@ -20,7 +20,8 @@ export function detectCardTypeFromText(text: string): CardType | null {
     t.includes("american express") ||
     t.includes("blue cash preferred") ||
     /amex/.test(t) ||
-    /membership rewards/.test(t)
+    /membership rewards/.test(t) ||
+    t.includes("appears on your statement as")
   ) {
     return "amex_bcp";
   }

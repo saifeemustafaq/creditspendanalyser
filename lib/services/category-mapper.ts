@@ -32,9 +32,62 @@ export const CHASE_SAPPHIRE_PREFERRED_CATEGORY_MAP: Record<string, Category | nu
   "Professional Services": null,
 };
 
+export const AMEX_BCP_CATEGORY_MAP: Record<string, Category | null> = {
+  // Merchandise & Supplies
+  "Merchandise & Supplies-Groceries": "Groceries",
+  "Merchandise & Supplies-Wholesale Stores": "Groceries",
+  "Merchandise & Supplies-Department Stores": "Shopping",
+  "Merchandise & Supplies-Electronics": "Shopping",
+  "Merchandise & Supplies-Clothing": "Shopping",
+  "Merchandise & Supplies-Sporting Goods": "Shopping",
+  "Merchandise & Supplies-Office Supplies": "Shopping",
+  "Merchandise & Supplies-Home Furnishings": "Home",
+  "Merchandise & Supplies-Pharmacies": "Healthcare",
+  "Merchandise & Supplies-Drug Stores": "Healthcare",
+  // Restaurants
+  "Restaurant-Restaurant": "Dining",
+  "Restaurant-Bar & Café": "Dining",
+  "Restaurant-Fast Food": "Dining",
+  // Travel
+  "Travel-Airline": "Travel",
+  "Travel-Hotel": "Travel",
+  "Travel-Lodging": "Travel",
+  "Travel-Car Rental": "Travel",
+  "Travel-Cruise Lines": "Travel",
+  "Travel-Parking": "Transportation",
+  "Travel-Transportation": "Transportation",
+  "Travel-Taxi & Limousines": "Transportation",
+  // Gas & Automotive
+  "Gas-Automotive": "Gas/Fuel",
+  "Automotive-Gas": "Gas/Fuel",
+  // Entertainment
+  "Entertainment-General": "Entertainment",
+  "Entertainment-Movie Theaters": "Entertainment",
+  "Entertainment-Sporting Events": "Entertainment",
+  // Healthcare
+  "Healthcare/Medical-Healthcare/Medical": "Healthcare",
+  "Healthcare/Medical-Pharmacy": "Healthcare",
+  // Personal
+  "Personal Care-Personal Care": "Personal Care",
+  // Telecom & Utilities
+  "Telecommunications-Cellular": "Phone/Internet",
+  "Telecommunications-Internet": "Phone/Internet",
+  "Utilities-Electric": "Utilities",
+  "Utilities-Gas": "Utilities",
+  // Education & Insurance
+  "Education-Education": "Education",
+  "Insurance-Insurance": "Insurance",
+  // Fees & Adjustments (annual fee, interest; cash rewards flow through as credit type so category is irrelevant)
+  "Fees & Adjustments-Fees & Adjustments": "Fees/Interest",
+  // Ambiguous — fall through to regex / AI tiers
+  "Business Services-General": null,
+  "Other-Other": null,
+};
+
 const ISSUER_CATEGORY_MAPS: Partial<Record<CardType, Record<string, Category | null>>> = {
   discover_it_student: DISCOVER_CATEGORY_MAP,
   chase_sapphire_preferred: CHASE_SAPPHIRE_PREFERRED_CATEGORY_MAP,
+  amex_bcp: AMEX_BCP_CATEGORY_MAP,
 };
 
 function lookupInMap(
