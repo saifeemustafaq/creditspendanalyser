@@ -17,6 +17,8 @@ export const amexAdapter: RowAdapter = (row: StructuredRow): ExtractedTransactio
     const desc = row.description.toLowerCase();
     if (/payment|autopay/.test(desc)) {
       type = "payment";
+    } else if (/reward|rebate|cash.?back/i.test(desc)) {
+      type = "reward";
     } else {
       type = "credit";
     }

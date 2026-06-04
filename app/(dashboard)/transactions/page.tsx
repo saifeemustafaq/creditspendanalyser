@@ -37,7 +37,7 @@ interface Tx {
   category: Category;
   cardType: CardType;
   amount: number;
-  type: "debit" | "credit" | "payment";
+  type: "debit" | "credit" | "payment" | "reward";
   rawDescription: string;
 }
 

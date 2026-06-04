@@ -15,7 +15,7 @@ import {
 
 const ALLOWED_CARD_TYPES = CARD_TYPES;
 const ALLOWED_FILE_FORMATS = ["pdf", "csv", "xls", "image"] as const;
-const ALLOWED_TYPES = ["debit", "credit", "payment"] as const;
+const ALLOWED_TYPES = ["debit", "credit", "payment", "reward"] as const;
 const ALLOWED_METHODS: CategorizationMethod[] = [
   "source_map",
   "rule",

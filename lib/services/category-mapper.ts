@@ -7,7 +7,7 @@ export const DISCOVER_CATEGORY_MAP: Record<string, Category | null> = {
   "Medical Services": "Healthcare",
   Education: "Education",
   "Payments and Credits": "Payment/Credit",
-  "Awards and Rebate Credits": "Payment/Credit",
+  "Awards and Rebate Credits": "Rewards",
   "Government Services": "Other",
   // Ambiguous — return null, falls through to regex / AI tiers.
   Merchandise: null,

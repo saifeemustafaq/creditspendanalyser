@@ -90,6 +90,9 @@ export function categorizeTransactions(
   const overrideMap = opts.overrideMap;
   const cardType = opts.cardType;
   return txs.map((tx) => {
+    if (tx.type === "reward") {
+      return { ...tx, category: "Rewards", categorizedBy: "rule" };
+    }
     if (tx.type === "payment" || tx.type === "credit") {
       return { ...tx, category: "Payment/Credit", categorizedBy: "rule" };
     }

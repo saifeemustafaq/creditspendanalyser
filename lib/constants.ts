@@ -35,6 +35,7 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   Transportation: "#65a30d",
   "Fees/Interest": "#be123c",
   "Payment/Credit": "#059669",
+  Rewards: "#f59e0b",
   Other: "#6b7280",
 };
 

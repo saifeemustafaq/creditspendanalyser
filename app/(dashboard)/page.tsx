@@ -62,6 +62,7 @@ export default async function DashboardPage({
   const debitCount = insights.typeCounts.find((t) => t._id === "debit");
   const creditCount = insights.typeCounts.find((t) => t._id === "credit");
   const paymentCount = insights.typeCounts.find((t) => t._id === "payment");
+  const rewardCount = insights.typeCounts.find((t) => t._id === "reward");
 
   const empty = txCount === 0;
 
@@ -115,6 +116,12 @@ export default async function DashboardPage({
                     <div className="flex justify-between gap-4">
                       <span>Credits/refunds</span>
                       <span className="tabular-nums">{creditCount?.count ?? 0} · {fmtCurrency(creditCount?.total ?? 0)}</span>
+                    </div>
+                  )}
+                  {(rewardCount?.count ?? 0) > 0 && (
+                    <div className="flex justify-between gap-4">
+                      <span>Rewards</span>
+                      <span className="tabular-nums">{rewardCount?.count ?? 0} · {fmtCurrency(rewardCount?.total ?? 0)}</span>
                     </div>
                   )}
                 </div>

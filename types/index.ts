@@ -6,7 +6,7 @@ export type CardType =
   | "amex_bcp"
   | "chase_sapphire_preferred";
 export type FileFormat = "pdf" | "csv" | "xls" | "image";
-export type TransactionType = "debit" | "credit" | "payment";
+export type TransactionType = "debit" | "credit" | "payment" | "reward";
 
 export const CARD_LABELS: Record<CardType, string> = {
   visa: "Visa",
@@ -37,6 +37,7 @@ export const CATEGORIES = [
   "Transportation",
   "Fees/Interest",
   "Payment/Credit",
+  "Rewards",
   "Other",
 ] as const;
 
