@@ -1,6 +1,6 @@
-export type RangeKey = "1m" | "3m" | "6m" | "12m" | "all";
+export type RangeKey = "1m" | "3m" | "6m" | "12m" | "all" | "custom";
 
-export const RANGE_KEYS: RangeKey[] = ["1m", "3m", "6m", "12m", "all"];
+export const RANGE_KEYS: RangeKey[] = ["1m", "3m", "6m", "12m", "all", "custom"];
 
 export function isRangeKey(value: string | null | undefined): value is RangeKey {
   return RANGE_KEYS.includes(value as RangeKey);

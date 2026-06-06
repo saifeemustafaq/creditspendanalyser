@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { aggregateInsights } from "@/lib/models/transactions";
-import { rangeToDates, isRangeKey, type RangeKey } from "@/lib/range";
+import { rangeToDates, isRangeKey, parseDate, type RangeKey } from "@/lib/range";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,6 +24,8 @@ export const dynamic = "force-dynamic";
 interface SearchParams {
   range?: string;
   cardType?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export default async function DashboardPage({
@@ -40,7 +42,10 @@ export default async function DashboardPage({
     sp.cardType && (CARD_TYPES as readonly string[]).includes(sp.cardType)
       ? (sp.cardType as CardType)
       : "all";
-  const { startDate, endDate } = rangeToDates(range);
+  const { startDate, endDate } =
+    range === "custom"
+      ? { startDate: parseDate(sp.startDate ?? null), endDate: parseDate(sp.endDate ?? null) }
+      : rangeToDates(range);
 
   const insights = await aggregateInsights({
     userId: session.userId,

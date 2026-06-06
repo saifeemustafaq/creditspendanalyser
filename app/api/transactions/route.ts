@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     );
     const skip = parseNumber(url.searchParams.get("skip")) ?? 0;
 
-    const { rows, total } = await listTransactions(
+    const { rows, total, filteredSpend, filteredDebitCount } = await listTransactions(
       {
         userId: session.userId,
         startDate: parseDate(url.searchParams.get("startDate")),
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       { limit, skip },
     );
 
-    return NextResponse.json({ rows, total });
+    return NextResponse.json({ rows, total, filteredSpend, filteredDebitCount });
   } catch (err) {
     console.error("GET /api/transactions failed:", err);
     const msg = err instanceof Error ? err.message : "Internal server error";
