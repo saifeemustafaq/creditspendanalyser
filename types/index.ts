@@ -4,7 +4,8 @@ export type CardType =
   | "visa"
   | "discover_it_student"
   | "amex_bcp"
-  | "chase_sapphire_preferred";
+  | "chase_sapphire_preferred"
+  | "robinhood_gold";
 export type FileFormat = "pdf" | "csv" | "xls" | "image";
 export type TransactionType = "debit" | "credit" | "payment" | "reward";
 
@@ -13,6 +14,7 @@ export const CARD_LABELS: Record<CardType, string> = {
   discover_it_student: "Discover IT Student",
   amex_bcp: "Amex Blue Cash Preferred",
   chase_sapphire_preferred: "Chase Sapphire Preferred",
+  robinhood_gold: "Robinhood Gold Card",
 };
 
 export const CARD_TYPES = Object.keys(CARD_LABELS) as CardType[];

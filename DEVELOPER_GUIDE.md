@@ -102,6 +102,7 @@ creditspendanalyser/
 │   │       ├── discover.ts            # Discover-style sign convention
 │   │       ├── chase.ts               # Chase Sapphire (Type column + inverted sign)
 │   │       ├── amex.ts                # Amex BCP (Discover-style sign + description-based payment detection)
+│   │       ├── robinhood.ts           # Robinhood Gold Card (Type column; skips Pending rows)
 │   │       └── index.ts               # getRowAdapter(cardType) dispatch
 │   └── models/                         # MongoDB collection access + queries
 │       ├── users.ts

@@ -45,6 +45,7 @@ export const CARD_COLORS: Record<CardType, string> = {
   discover_it_student: "#ff6000",
   amex_bcp: "#0d9488",
   chase_sapphire_preferred: "#117aca",
+  robinhood_gold: "#00c805",
 };
 
 // Per-summary-card accent colors used on the dashboard's left-border accents.

@@ -12,6 +12,8 @@ const CARD_PROMPT_HINTS: Record<CardType, string> = {
     "This is an American Express Blue Cash Preferred statement. Columns: Date, Description, Amount. Payments appear as negative amounts. Membership rewards are not spending — mark as credit.",
   chase_sapphire_preferred:
     "This is a Chase Sapphire Preferred statement. Columns: Transaction Date, Post Date, Description, Category, Type, Amount, Memo. The Type column is authoritative: Sale=purchase (debit), Payment=payment to card, Return=refund (credit), Fee=debit, Adjustment=use sign. Amounts are negative for purchases/fees and positive for payments/returns; always store amount as POSITIVE and encode direction in 'type'.",
+  robinhood_gold:
+    "This is a Robinhood Gold Card statement. Columns: Date, Time, Cardholder, Amount, Points, Balance, Status, Type, Merchant, Description. The Type column is authoritative: Purchase=debit, Payment=payment to card, Fee with positive amount=debit, Fee with negative amount=credit (reversal). Amounts are positive for purchases/fees and negative for payments; always store amount as POSITIVE and encode direction in 'type'. Skip any rows where Status is Pending.",
 };
 
 const SYSTEM = `You extract credit card transactions from statements into strict JSON.

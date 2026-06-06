@@ -123,7 +123,7 @@ export async function parseAndPreview(args: ParseAndPreviewArgs): Promise<Previe
 
   if (parsed.structuredRows && parsed.structuredRows.length > 0) {
     const adapter = getRowAdapter(cardType);
-    extracted = parsed.structuredRows.map(adapter);
+    extracted = parsed.structuredRows.map(adapter).filter((t): t is ExtractedTransaction => t !== null);
     statementDate = detectStatementDateFromRows(parsed.structuredRows);
   } else if (parsed.format === "image") {
     const result = await extractFromImage(cardType, parsed.imageDataUrl ?? "");

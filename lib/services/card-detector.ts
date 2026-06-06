@@ -36,6 +36,10 @@ export function detectCardTypeFromText(text: string): CardType | null {
   ) {
     return "chase_sapphire_preferred";
   }
+  // Robinhood Gold Card — uniquely has a "Cardholder" column (authorized-user support).
+  if (t.includes("cardholder") && t.includes("points")) {
+    return "robinhood_gold";
+  }
   if (t.includes("visa") || /chase|bank of america|capital one|wells fargo|citi/.test(t)) {
     return "visa";
   }
