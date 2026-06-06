@@ -87,6 +87,7 @@ export const AMEX_BCP_CATEGORY_MAP: Record<string, Category | null> = {
 const ISSUER_CATEGORY_MAPS: Partial<Record<CardType, Record<string, Category | null>>> = {
   discover_it_student: DISCOVER_CATEGORY_MAP,
   chase_sapphire_preferred: CHASE_SAPPHIRE_PREFERRED_CATEGORY_MAP,
+  chase_prime_visa: CHASE_SAPPHIRE_PREFERRED_CATEGORY_MAP,
   amex_bcp: AMEX_BCP_CATEGORY_MAP,
 };
 

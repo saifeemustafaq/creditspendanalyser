@@ -1,12 +1,14 @@
 import type { CardType } from "@/types";
 
-export function detectCardTypeFromText(text: string): CardType | null {
+// Both Chase card CSVs share the same column header; use the filename to tell them apart.
+const CHASE_CSV_HEADER = /transaction date,post date,description,category,type,amount,memo/i;
+
+export function detectCardTypeFromText(text: string, filename?: string): CardType | null {
   if (!text) return null;
   const t = text.toLowerCase();
+  const f = (filename ?? "").toLowerCase();
 
-  // Discover IT Student cues first because Discover statements often also contain "Visa" debit hints in retailer rows.
-  // Note: Discover CSV exports do not include the word "discover" in the body — detect by the
-  // unique "Trans. Date" header (with period; Chase uses "Transaction Date") and "Cashback Bonus" rows.
+  // Discover IT Student — unique "Trans. Date" header (with period) and "Cashback Bonus" rows.
   if (
     t.includes("cashback bonus") ||
     t.includes("discover it student") ||
@@ -16,6 +18,7 @@ export function detectCardTypeFromText(text: string): CardType | null {
   ) {
     return "discover_it_student";
   }
+
   if (
     t.includes("american express") ||
     t.includes("blue cash preferred") ||
@@ -25,21 +28,23 @@ export function detectCardTypeFromText(text: string): CardType | null {
   ) {
     return "amex_bcp";
   }
-  // Chase Sapphire Preferred — match before the generic "chase" → visa fallback.
-  // Markers: filename/content "chase" plus a Sapphire/Chase Travel hint, or
-  // the Chase CSV header signature (Type + Memo columns alongside Amount).
-  if (
-    t.includes("chase") &&
-    (t.includes("sapphire") ||
-      t.includes("chase travel") ||
-      /transaction date,post date,description,category,type,amount,memo/i.test(t))
-  ) {
-    return "chase_sapphire_preferred";
-  }
+
   // Robinhood Gold Card — uniquely has a "Cardholder" column (authorized-user support).
   if (t.includes("cardholder") && t.includes("points")) {
     return "robinhood_gold";
   }
+
+  // Chase cards share the same CSV column header. Distinguish by filename first,
+  // then fall back to content hints (sapphire in body) if filename is ambiguous.
+  // Neither Chase CSV embeds the bank name in the body, so do NOT require "chase" here.
+  if (CHASE_CSV_HEADER.test(t) || t.includes("sapphire") || t.includes("chase travel")) {
+    // Prime Visa: filename contains "prime" or Amazon-branded hint
+    if (f.includes("prime") || t.includes("prime visa") || t.includes("amazon")) {
+      return "chase_prime_visa";
+    }
+    return "chase_sapphire_preferred";
+  }
+
   if (t.includes("visa") || /chase|bank of america|capital one|wells fargo|citi/.test(t)) {
     return "visa";
   }

@@ -5,6 +5,7 @@ export type CardType =
   | "discover_it_student"
   | "amex_bcp"
   | "chase_sapphire_preferred"
+  | "chase_prime_visa"
   | "robinhood_gold";
 export type FileFormat = "pdf" | "csv" | "xls" | "image";
 export type TransactionType = "debit" | "credit" | "payment" | "reward";
@@ -14,6 +15,7 @@ export const CARD_LABELS: Record<CardType, string> = {
   discover_it_student: "Discover IT Student",
   amex_bcp: "Amex Blue Cash Preferred",
   chase_sapphire_preferred: "Chase Sapphire Preferred",
+  chase_prime_visa: "Chase Prime Visa Signature",
   robinhood_gold: "Robinhood Gold Card",
 };
 
