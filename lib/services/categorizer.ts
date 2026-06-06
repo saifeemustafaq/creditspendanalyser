@@ -105,12 +105,25 @@ export function categorizeTransactions(
       const key = normalizeMerchantKey(tx.merchant ?? tx.rawDescription ?? "");
       if (key) {
         const hit = overrideMap.get(key);
-        if (hit) return { ...tx, category: hit, categorizedBy: "user_override" };
+        if (hit) {
+          // If the raw description signals a more specific category (e.g. "Costco GAS"
+          // while the override has "Costco" → Groceries), trust the regex so that
+          // broad merchant overrides don't accidentally swallow sub-type transactions.
+          const specificRuleHit = categorizeMerchantRule(tx.merchant ?? "", tx.rawDescription ?? "");
+          if (specificRuleHit && specificRuleHit !== hit) {
+            return { ...tx, category: specificRuleHit, categorizedBy: "rule" };
+          }
+          return { ...tx, category: hit, categorizedBy: "user_override" };
+        }
 
         // Word-boundary prefix fallback: "apni mandi" hits "apni mandi farmers marke sunnyvale"
         // and vice versa, without risking "shell" matching "shellfish".
         for (const [storedKey, storedCategory] of overrideMap) {
           if (storedKey.startsWith(key + " ") || key.startsWith(storedKey + " ")) {
+            const specificRuleHit = categorizeMerchantRule(tx.merchant ?? "", tx.rawDescription ?? "");
+            if (specificRuleHit && specificRuleHit !== storedCategory) {
+              return { ...tx, category: specificRuleHit, categorizedBy: "rule" };
+            }
             return { ...tx, category: storedCategory, categorizedBy: "user_override" };
           }
         }

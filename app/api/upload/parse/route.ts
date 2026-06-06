@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { parseAndPreview } from "@/lib/services/extraction-pipeline";
-import { parseUploadRequest } from "./_helpers";
+import { parseUploadRequest } from "../_helpers";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
