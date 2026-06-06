@@ -114,7 +114,7 @@ export async function parseAndPreview(args: ParseAndPreviewArgs): Promise<Previe
   const parsed = await parseFile(buffer, filename, mimeType);
 
   let cardType: CardType | null = overrideCardType ?? null;
-  if (!cardType && parsed.text) cardType = detectCardTypeFromText(parsed.text);
+  if (!cardType && parsed.text) cardType = detectCardTypeFromText(parsed.text, filename);
   if (!cardType && parsed.text) cardType = await detectCardTypeViaLLM(parsed.text);
   if (!cardType) cardType = "visa";
 

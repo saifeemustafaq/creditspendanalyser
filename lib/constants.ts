@@ -49,6 +49,7 @@ export const CARD_COLORS: Record<CardType, string> = {
   discover_it_student: "#ff6000",
   amex_bcp: "#0d9488",
   chase_sapphire_preferred: "#117aca",
+  chase_prime_visa: "#ff9900",
   robinhood_gold: "#00c805",
 };
 
