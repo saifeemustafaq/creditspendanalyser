@@ -8,14 +8,19 @@ import {
 import { upsertOverride } from "@/lib/models/category-overrides";
 import { normalizeMerchantKey } from "@/lib/services/merchant-normalizer";
 import { TRANSACTIONS_MAX_LIMIT, TRANSACTIONS_PAGE_SIZE } from "@/lib/constants";
-import { CATEGORIES, type CardType, type Category } from "@/types";
+import { parseDate } from "@/lib/range";
+import { CARD_TYPES, CATEGORIES, type CardType, type Category } from "@/types";
 
 export const runtime = "nodejs";
 
-function parseDate(s: string | null): Date | undefined {
-  if (!s) return undefined;
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? undefined : d;
+function parseCardType(raw: string | null): CardType | "all" {
+  if (!raw || raw === "all") return "all";
+  return (CARD_TYPES as readonly string[]).includes(raw) ? (raw as CardType) : "all";
+}
+
+function parseCategory(raw: string | null): Category | "all" {
+  if (!raw || raw === "all") return "all";
+  return (CATEGORIES as readonly string[]).includes(raw) ? (raw as Category) : "all";
 }
 
 function parseNumber(s: string | null): number | undefined {
@@ -41,8 +46,8 @@ export async function GET(request: Request) {
         userId: session.userId,
         startDate: parseDate(url.searchParams.get("startDate")),
         endDate: parseDate(url.searchParams.get("endDate")),
-        cardType: (url.searchParams.get("cardType") as CardType | "all" | null) ?? "all",
-        category: (url.searchParams.get("category") as Category | "all" | null) ?? "all",
+        cardType: parseCardType(url.searchParams.get("cardType")),
+        category: parseCategory(url.searchParams.get("category")),
         minAmount: parseNumber(url.searchParams.get("minAmount")),
         maxAmount: parseNumber(url.searchParams.get("maxAmount")),
         search: url.searchParams.get("search") ?? undefined,

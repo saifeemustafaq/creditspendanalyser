@@ -5,6 +5,7 @@ import {
   type ConfirmAndSaveArgs,
   type PreviewTransaction,
 } from "@/lib/services/extraction-pipeline";
+import { FILE_FORMATS } from "@/lib/constants";
 import {
   CARD_TYPES,
   CATEGORIES,
@@ -14,7 +15,6 @@ import {
 } from "@/types";
 
 const ALLOWED_CARD_TYPES = CARD_TYPES;
-const ALLOWED_FILE_FORMATS = ["pdf", "csv", "xls", "image"] as const;
 const ALLOWED_TYPES = ["debit", "credit", "payment", "reward"] as const;
 const ALLOWED_METHODS: CategorizationMethod[] = [
   "source_map",
@@ -63,7 +63,7 @@ function parseConfirmBody(raw: unknown, userId: string): ConfirmAndSaveArgs | nu
   const cardType = r.cardType;
   const fileFormat = r.fileFormat;
   if (typeof cardType !== "string" || !ALLOWED_CARD_TYPES.includes(cardType as CardType)) return null;
-  if (typeof fileFormat !== "string" || !(ALLOWED_FILE_FORMATS as readonly string[]).includes(fileFormat)) {
+  if (typeof fileFormat !== "string" || !(FILE_FORMATS as readonly string[]).includes(fileFormat)) {
     return null;
   }
   const originalFilename = typeof r.originalFilename === "string" ? r.originalFilename : "statement";

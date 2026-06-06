@@ -1,6 +1,7 @@
-import type { CardType, Category, RecurringFrequency } from "@/types";
+import type { CardType, Category, FileFormat, RecurringFrequency } from "@/types";
 
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB
+export const MOBILE_BREAKPOINT = 768;
 export const TRANSACTIONS_PAGE_SIZE = 50;
 export const TRANSACTIONS_MAX_LIMIT = 200;
 export const EXPORT_MAX_ROWS = 10_000;
@@ -12,6 +13,9 @@ export const AI_CATEGORIZE_BATCH_SIZE = 50;
 export const AUDIT_SAMPLE_SIZES = [25, 50, 100] as const;
 export const AUDIT_DEFAULT_SAMPLE_SIZE = 50;
 export const AUDIT_MAX_SAMPLE_SIZE = 100;
+
+/** Allowed statement file formats — runtime companion for the FileFormat union. */
+export const FILE_FORMATS = ["pdf", "csv", "xls", "image"] as const satisfies readonly FileFormat[];
 
 // 20 distinct hues — one per Category. Hex with no alpha; consumers append
 // "1A" (≈10%) for tinted backgrounds via color-mix in CSS or hex8.

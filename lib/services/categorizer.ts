@@ -10,8 +10,12 @@ import { mapIssuerCategory } from "@/lib/services/category-mapper";
 import { normalizeMerchantKey } from "@/lib/services/merchant-normalizer";
 
 const MERCHANT_RULES: Array<{ match: RegExp; category: Category }> = [
+  // Costco Gas must be checked before the broad Costco → Groceries rule below.
+  { match: /costco\s*(gas|gasoline|fuel)/i, category: "Gas/Fuel" },
   { match: /walmart|target|costco|aldi|kroger|safeway|whole\s*foods|trader\s*joe|publix|wegmans|heb/i, category: "Groceries" },
-  { match: /mcdonald|starbucks|chipotle|chick-?fil-?a|panera|subway|taco\s*bell|burger\s*king|wendy|kfc|domino|pizza|restaurant|cafe|coffee|grubhub|doordash|ubereats|uber\s*eats|postmates/i, category: "Dining" },
+  // Uber Eats must be checked before the broad Uber → Transportation rule below.
+  { match: /ubereats|uber\s*eats|grubhub|doordash|postmates/i, category: "Dining" },
+  { match: /mcdonald|starbucks|chipotle|chick-?fil-?a|panera|subway|taco\s*bell|burger\s*king|wendy|kfc|domino|pizza|restaurant|cafe|coffee/i, category: "Dining" },
   { match: /shell|chevron|exxon|mobil|bp\s*gas|76\s*gas|sunoco|valero|arco|gas\s*station/i, category: "Gas/Fuel" },
   { match: /netflix|spotify|hulu|disney\+|hbo|apple\s*music|apple\s*tv|prime\s*video|youtube\s*premium|paramount|peacock/i, category: "Subscriptions" },
   { match: /amazon|ebay|etsy|best\s*buy|wayfair|home\s*depot|lowe|ikea|macys|nordstrom|kohls|tj\s*maxx|marshalls/i, category: "Shopping" },
@@ -25,7 +29,7 @@ const MERCHANT_RULES: Array<{ match: RegExp; category: Category }> = [
   { match: /geico|state\s*farm|allstate|progressive|insurance/i, category: "Insurance" },
   { match: /tuition|university|college|coursera|udemy|edx|school/i, category: "Education" },
   { match: /sephora|ulta|salon|barber|spa/i, category: "Personal Care" },
-  { match: /movie|cinema|amc|regal|theatre|theater|concert|ticket|spotify|playstation|xbox|nintendo|steam|gym|fitness/i, category: "Entertainment" },
+  { match: /movie|cinema|amc|regal|theatre|theater|concert|ticket|playstation|xbox|nintendo|steam|gym|fitness/i, category: "Entertainment" },
   { match: /interest\s*charge|finance\s*charge|late\s*fee|annual\s*fee|service\s*fee/i, category: "Fees/Interest" },
   { match: /payment\s*-?\s*thank\s*you|autopay|online\s*payment/i, category: "Payment/Credit" },
 ];
@@ -102,6 +106,14 @@ export function categorizeTransactions(
       if (key) {
         const hit = overrideMap.get(key);
         if (hit) return { ...tx, category: hit, categorizedBy: "user_override" };
+
+        // Word-boundary prefix fallback: "apni mandi" hits "apni mandi farmers marke sunnyvale"
+        // and vice versa, without risking "shell" matching "shellfish".
+        for (const [storedKey, storedCategory] of overrideMap) {
+          if (storedKey.startsWith(key + " ") || key.startsWith(storedKey + " ")) {
+            return { ...tx, category: storedCategory, categorizedBy: "user_override" };
+          }
+        }
       }
     }
 

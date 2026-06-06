@@ -80,7 +80,7 @@ function TransactionTableRows({
       {rows.map(({ originalIndex, tx }) => (
         <TableRow
           key={originalIndex}
-          className={readOnly ? "opacity-60" : undefined}
+          className={cn(readOnly && "opacity-60")}
         >
           <TableCell className="whitespace-nowrap">
             {fmtDate(tx.transactionDate)}

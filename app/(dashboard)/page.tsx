@@ -1,12 +1,12 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { aggregateInsights } from "@/lib/models/transactions";
-import { rangeToDates, type RangeKey } from "@/lib/range";
+import { rangeToDates, isRangeKey, type RangeKey } from "@/lib/range";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CARD_LABELS, type Category } from "@/types";
+import { CARD_LABELS, CARD_TYPES, type Category } from "@/types";
 import type { CardType } from "@/types";
 import { CATEGORY_COLORS, SUMMARY_ACCENT } from "@/lib/constants";
 import { fmtCurrency, fmtDate } from "@/lib/format";
@@ -35,8 +35,11 @@ export default async function DashboardPage({
   if (!session) redirect("/login");
   const sp = await searchParams;
 
-  const range = (sp.range as RangeKey) ?? "12m";
-  const cardType = (sp.cardType as CardType | "all") ?? "all";
+  const range: RangeKey = isRangeKey(sp.range) ? sp.range : "12m";
+  const cardType: CardType | "all" =
+    sp.cardType && (CARD_TYPES as readonly string[]).includes(sp.cardType)
+      ? (sp.cardType as CardType)
+      : "all";
   const { startDate, endDate } = rangeToDates(range);
 
   const insights = await aggregateInsights({
@@ -268,10 +271,8 @@ function SummaryCard({
 }) {
   const content = (
     <Card
-      className={cn("border-l-4", accentColor && "border-l-[color:var(--accent-c)]")}
-      style={
-        accentColor ? ({ "--accent-c": accentColor } as React.CSSProperties) : undefined
-      }
+      className="border-l-4"
+      style={accentColor ? { borderLeftColor: accentColor } : undefined}
     >
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>

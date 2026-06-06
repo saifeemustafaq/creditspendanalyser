@@ -7,8 +7,8 @@ export function CategoryBadge({ category }: { category: Category }) {
   return (
     <Badge
       variant="secondary"
-      className="border-transparent bg-[color:var(--c)]/10 text-[color:var(--c)]"
-      style={{ "--c": color } as React.CSSProperties}
+      className="border-transparent"
+      style={{ color, backgroundColor: `${color}1a` }}
     >
       {category}
     </Badge>

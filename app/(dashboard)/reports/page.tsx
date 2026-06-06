@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { CardBadge } from "@/components/card-badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,11 +33,27 @@ interface Statement {
 }
 
 export default function ReportsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const startDate = searchParams.get("startDate") ?? "";
+  const endDate = searchParams.get("endDate") ?? "";
+  const cardType = searchParams.get("cardType") ?? "all";
+  const category = searchParams.get("category") ?? "all";
+
   const [statements, setStatements] = useState<Statement[] | null>(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [cardType, setCardType] = useState<string>("all");
-  const [category, setCategory] = useState<string>("all");
+  const [isExporting, setIsExporting] = useState<"csv" | "pdf" | null>(null);
+
+  function updateFilter(key: string, value: string) {
+    const sp = new URLSearchParams(searchParams.toString());
+    if (value === "" || value === "all") {
+      sp.delete(key);
+    } else {
+      sp.set(key, value);
+    }
+    const query = sp.toString();
+    router.replace(query ? `?${query}` : "?");
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +82,7 @@ export default function ReportsPage() {
     };
   }, []);
 
-  function exportUrl(format: "csv" | "pdf"): string {
+  function buildExportUrl(format: "csv" | "pdf"): string {
     const sp = new URLSearchParams();
     sp.set("format", format);
     if (startDate) sp.set("startDate", startDate);
@@ -74,6 +91,33 @@ export default function ReportsPage() {
     if (category !== "all") sp.set("category", category);
     return `/api/export?${sp.toString()}`;
   }
+
+  const handleExport = useCallback(
+    async (format: "csv" | "pdf") => {
+      setIsExporting(format);
+      try {
+        const res = await fetch(buildExportUrl(format));
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({ error: "Export failed" }));
+          toast.error(body.error ?? "Export failed");
+          return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `transactions-${Date.now()}.${format}`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Export failed");
+      } finally {
+        setIsExporting(null);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [startDate, endDate, cardType, category],
+  );
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -93,15 +137,25 @@ export default function ReportsPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="start">Start date</Label>
-              <Input id="start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <Input
+                id="start"
+                type="date"
+                value={startDate}
+                onChange={(e) => updateFilter("startDate", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="end">End date</Label>
-              <Input id="end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+              <Input
+                id="end"
+                type="date"
+                value={endDate}
+                onChange={(e) => updateFilter("endDate", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Card</Label>
-              <Select value={cardType} onValueChange={(v) => setCardType(v ?? "all")}>
+              <Select value={cardType} onValueChange={(v) => updateFilter("cardType", v ?? "all")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -117,7 +171,10 @@ export default function ReportsPage() {
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={category} onValueChange={(v) => setCategory(v ?? "all")}>
+              <Select
+                value={category}
+                onValueChange={(v) => updateFilter("category", v ?? "all")}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -133,16 +190,18 @@ export default function ReportsPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <a href={exportUrl("csv")} download className={buttonVariants()}>
-              <Download /> Export CSV
-            </a>
-            <a
-              href={exportUrl("pdf")}
-              download
-              className={buttonVariants({ variant: "secondary" })}
+            <Button onClick={() => handleExport("csv")} disabled={isExporting !== null}>
+              <Download />
+              {isExporting === "csv" ? "Exporting…" : "Export CSV"}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleExport("pdf")}
+              disabled={isExporting !== null}
             >
-              <Download /> Export PDF
-            </a>
+              <Download />
+              {isExporting === "pdf" ? "Exporting…" : "Export PDF"}
+            </Button>
           </div>
         </CardContent>
       </Card>

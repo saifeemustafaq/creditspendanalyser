@@ -3,14 +3,19 @@ import { getSession } from "@/lib/auth";
 import { listTransactions } from "@/lib/models/transactions";
 import { buildTransactionsCsv, buildTransactionsPdf } from "@/lib/services/export-service";
 import { EXPORT_MAX_ROWS } from "@/lib/constants";
-import type { CardType, Category } from "@/types";
+import { parseDate } from "@/lib/range";
+import { CARD_TYPES, CATEGORIES, type CardType, type Category } from "@/types";
 
 export const runtime = "nodejs";
 
-function parseDate(s: string | null): Date | undefined {
-  if (!s) return undefined;
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? undefined : d;
+function parseCardType(raw: string | null): CardType | "all" {
+  if (!raw || raw === "all") return "all";
+  return (CARD_TYPES as readonly string[]).includes(raw) ? (raw as CardType) : "all";
+}
+
+function parseCategory(raw: string | null): Category | "all" {
+  if (!raw || raw === "all") return "all";
+  return (CATEGORIES as readonly string[]).includes(raw) ? (raw as Category) : "all";
 }
 
 export async function GET(request: Request) {
@@ -28,8 +33,8 @@ export async function GET(request: Request) {
         userId: session.userId,
         startDate,
         endDate,
-        cardType: (url.searchParams.get("cardType") as CardType | "all" | null) ?? "all",
-        category: (url.searchParams.get("category") as Category | "all" | null) ?? "all",
+        cardType: parseCardType(url.searchParams.get("cardType")),
+        category: parseCategory(url.searchParams.get("category")),
       },
       { limit: EXPORT_MAX_ROWS },
     );
@@ -44,7 +49,7 @@ export async function GET(request: Request) {
     }
 
     const buf = buildTransactionsPdf({ rows, startDate, endDate });
-    return new NextResponse(buf as unknown as BodyInit, {
+    return new NextResponse(new Uint8Array(buf), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="transactions-${Date.now()}.pdf"`,

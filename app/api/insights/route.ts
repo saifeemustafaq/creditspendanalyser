@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { aggregateInsights } from "@/lib/models/transactions";
-import type { CardType, Category } from "@/types";
+import { parseDate } from "@/lib/range";
+import { CARD_TYPES, CATEGORIES, type CardType, type Category } from "@/types";
 
 export const runtime = "nodejs";
 
-function parseDate(s: string | null): Date | undefined {
-  if (!s) return undefined;
-  const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? undefined : d;
+function parseCardType(raw: string | null): CardType | "all" {
+  if (!raw || raw === "all") return "all";
+  return (CARD_TYPES as readonly string[]).includes(raw) ? (raw as CardType) : "all";
+}
+
+function parseCategory(raw: string | null): Category | "all" {
+  if (!raw || raw === "all") return "all";
+  return (CATEGORIES as readonly string[]).includes(raw) ? (raw as Category) : "all";
 }
 
 export async function GET(request: Request) {
@@ -19,8 +24,8 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const startDate = parseDate(url.searchParams.get("startDate"));
     const endDate = parseDate(url.searchParams.get("endDate"));
-    const cardType = (url.searchParams.get("cardType") as CardType | "all" | null) ?? "all";
-    const category = (url.searchParams.get("category") as Category | "all" | null) ?? "all";
+    const cardType = parseCardType(url.searchParams.get("cardType"));
+    const category = parseCategory(url.searchParams.get("category"));
 
     const data = await aggregateInsights({
       userId: session.userId,

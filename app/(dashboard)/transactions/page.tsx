@@ -258,8 +258,8 @@ function TransactionsView() {
                       <div className="flex items-center gap-2">
                         <span
                           aria-hidden
-                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-[color:var(--c)]"
-                          style={{ "--c": CATEGORY_COLORS[tx.category] } as React.CSSProperties}
+                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: CATEGORY_COLORS[tx.category] }}
                         />
                         <Select
                           value={tx.category}

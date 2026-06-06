@@ -1,51 +1,25 @@
-import type {
-  CardType,
-  CategorizationMethod,
-  Category,
-} from "@/types";
+import type { CardType, CategorizationMethod, Category } from "@/types";
+
+// Re-exported from the service so client components and server code share one definition.
+export type {
+  DisagreementRow,
+  MatchRow,
+  AuditSummary,
+  AuditSampleResult as AuditResponse,
+} from "@/lib/services/audit-service";
 
 export type AuditPhase = "config" | "loading" | "results" | "saving";
 export type ResolutionAction = "accept_ai" | "keep_current" | "manual" | "skip";
-export interface Resolution {
+export type Resolution = {
   action: ResolutionAction;
   manualCategory?: Category;
-}
+};
 export type AuditableSource = Extract<CategorizationMethod, "source_map" | "rule">;
-
-export interface DisagreementRow {
-  _id: string;
-  transactionDate: string;
-  merchant: string;
-  rawDescription: string;
-  amount: number;
-  cardType: CardType;
-  currentCategory: Category;
-  categorizedBy: CategorizationMethod;
-  sourceCategory: string | null;
-  aiSuggestedCategory: Category;
-}
-
-export interface MatchRow {
-  _id: string;
-  merchant: string;
-  category: Category;
-  categorizedBy: CategorizationMethod;
-}
-
-export interface AuditSummary {
-  sampled: number;
-  matches: number;
-  disagreements: number;
-  accuracyPct: number;
-}
-
-export interface AuditResponse {
-  summary: AuditSummary;
-  disagreements: DisagreementRow[];
-  matches: MatchRow[];
-}
 
 export const SOURCE_LABELS: Record<AuditableSource, string> = {
   source_map: "Issuer",
   rule: "Rule",
 };
+
+// Keep CardType in scope for consumers that import it transitively via this file.
+export type { CardType, CategorizationMethod, Category };

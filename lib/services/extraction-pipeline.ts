@@ -271,7 +271,7 @@ export async function confirmAndSave(args: ConfirmAndSaveArgs): Promise<ConfirmR
     if (txDocs.length > 0) await insertTransactions(txDocs);
   }
 
-  const LEARNABLE_METHODS: CategorizationMethod[] = ["user", "ai"];
+  const LEARNABLE_METHODS: CategorizationMethod[] = ["user", "ai", "source_map"];
   for (const t of savedPreviews) {
     if (!LEARNABLE_METHODS.includes(t.categorizedBy)) continue;
     if (t.category === "Other") continue;

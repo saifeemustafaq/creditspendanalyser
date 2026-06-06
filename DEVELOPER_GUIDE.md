@@ -34,93 +34,117 @@ creditspendanalyser/
 │   │   ├── loading.tsx                 # Dashboard skeleton
 │   │   ├── error.tsx                   # Dashboard error boundary
 │   │   ├── page.tsx                    # Main dashboard (charts, insights)
-│   │   ├── upload/page.tsx             # Statement upload (multi-step: drop → review → confirm)
-│   │   ├── uploads/page.tsx            # Upload history with categorization stats and delete
-│   │   ├── transactions/page.tsx       # Transaction list
+│   │   ├── upload/
+│   │   │   ├── page.tsx                # Statement upload (multi-step: drop → review → confirm)
+│   │   │   ├── loading.tsx             # Upload page skeleton
+│   │   │   └── error.tsx               # Upload page error boundary
+│   │   ├── uploads/
+│   │   │   ├── page.tsx                # Upload history with categorization stats and delete
+│   │   │   ├── loading.tsx             # Uploads page skeleton
+│   │   │   └── error.tsx               # Uploads page error boundary
+│   │   ├── transactions/
+│   │   │   ├── page.tsx                # Transaction list
+│   │   │   ├── loading.tsx             # Transactions page skeleton
+│   │   │   └── error.tsx               # Transactions page error boundary
 │   │   ├── recurring/
 │   │   │   ├── page.tsx                # Recurring detection (summary + alerts + table)
-│   │   │   └── loading.tsx             # Recurring page skeleton
-│   │   └── reports/page.tsx            # Reports and export
+│   │   │   ├── loading.tsx             # Recurring page skeleton
+│   │   │   └── error.tsx               # Recurring page error boundary
+│   │   └── reports/
+│   │       ├── page.tsx                # Reports and export (URL-driven filters)
+│   │       ├── loading.tsx             # Reports page skeleton
+│   │       └── error.tsx               # Reports page error boundary
 │   ├── api/
-│   │   ├── auth/route.ts              # Login / logout / session check
-│   │   ├── upload/route.ts            # Legacy single-shot upload (parse + save)
-│   │   ├── upload/parse/route.ts      # Phase 1: parse + categorize (no DB write)
-│   │   ├── upload/categorize/route.ts # AI categorization for ambiguous rows
-│   │   ├── upload/confirm/route.ts    # Phase 2: persist reviewed transactions
-│   │   ├── statements/route.ts        # Statement history
-│   │   ├── statements/[id]/route.ts   # Bulk delete statement + its transactions
-│   │   ├── recurring/route.ts         # GET detected recurring summary
+│   │   ├── auth/route.ts               # Login / logout / session check
+│   │   ├── upload/
+│   │   │   ├── _helpers.ts             # Shared formData + file validation for upload routes
+│   │   │   ├── route.ts                # Legacy single-shot upload (parse + save)
+│   │   │   ├── parse/route.ts          # Phase 1: parse + categorize (no DB write)
+│   │   │   ├── categorize/route.ts     # AI categorization for ambiguous rows
+│   │   │   └── confirm/route.ts        # Phase 2: persist reviewed transactions
+│   │   ├── statements/route.ts         # Statement history
+│   │   ├── statements/[id]/route.ts    # Bulk delete statement + its transactions
+│   │   ├── recurring/route.ts          # GET detected recurring summary
 │   │   ├── recurring/overrides/route.ts # POST/DELETE user recurring overrides
-│   │   ├── transactions/route.ts      # CRUD transactions
+│   │   ├── transactions/route.ts       # CRUD transactions
 │   │   ├── transactions/audit/sample/route.ts   # Audit: sample + AI cross-check
 │   │   ├── transactions/audit/resolve/route.ts  # Audit: persist resolutions
-│   │   ├── insights/route.ts          # Aggregated insights
-│   │   └── export/route.ts            # CSV / PDF export
-│   ├── layout.tsx                      # Root layout (fonts, providers, Toaster)
-│   └── globals.css                     # Tailwind v4 + ShadCN theme tokens
+│   │   ├── insights/route.ts           # Aggregated insights
+│   │   └── export/route.ts             # CSV / PDF export
+│   ├── error.tsx                        # Root error boundary (catch-all)
+│   ├── layout.tsx                       # Root layout (fonts, providers, Toaster)
+│   └── globals.css                      # Tailwind v4 + ShadCN theme tokens
 ├── components/
-│   ├── ui/                             # ShadCN-generated UI primitives (do not modify)
-│   ├── app-sidebar.tsx                 # Dashboard sidebar navigation
-│   ├── audit-dialog.tsx                # Category audit dialog (config + state machine)
-│   ├── audit-results-view.tsx          # Audit results view (disagreements + matches)
-│   ├── audit-response-parser.ts        # Runtime parser for /audit/sample response
-│   ├── audit-types.ts                  # Shared audit types
-│   ├── card-badge.tsx                  # Tinted card-type label using CARD_COLORS
-│   ├── category-badge.tsx              # Tinted category label using CATEGORY_COLORS
-│   ├── dashboard-filters.tsx           # Date range + card type filter bar
-│   ├── insight-charts.tsx              # Dashboard chart components
-│   ├── recurring-add-dialog.tsx        # "Add recurring" dialog (manual include action)
-│   ├── recurring-alerts.tsx            # Alert banner cards on the recurring page
-│   ├── recurring-items-table.tsx       # Recurring items table + row actions
-│   ├── recurring-override-dialog.tsx   # Frequency-override dialog
-│   └── upload-review-table.tsx         # Upload review table with inline category editing
-├── hooks/                              # Custom React hooks
+│   ├── ui/                              # ShadCN-generated UI primitives (do not modify)
+│   ├── app-sidebar.tsx                  # Dashboard sidebar navigation
+│   ├── audit-dialog.tsx                 # Category audit dialog (config + state machine)
+│   ├── audit-results-view.tsx           # Audit results view (disagreements + matches)
+│   ├── audit-response-parser.ts         # Runtime parser for /audit/sample response
+│   ├── audit-types.ts                   # Client-side audit types (re-exports server shapes from audit-service)
+│   ├── card-badge.tsx                   # Tinted card-type label using CARD_COLORS
+│   ├── category-badge.tsx               # Tinted category label using CATEGORY_COLORS
+│   ├── dashboard-filters.tsx            # Date range + card type filter bar
+│   ├── insight-charts.tsx               # Dashboard chart components
+│   ├── recurring-add-dialog.tsx         # "Add recurring" dialog (manual include action)
+│   ├── recurring-alerts.tsx             # Alert banner cards on the recurring page
+│   ├── recurring-items-table.tsx        # Recurring items table + row actions
+│   ├── recurring-override-dialog.tsx    # Frequency-override dialog
+│   └── upload-review-table.tsx          # Upload review table with inline category editing
+├── hooks/
+│   ├── use-mobile.ts                    # Responsive breakpoint hook (uses MOBILE_BREAKPOINT)
+│   └── use-upload-wizard.ts            # Multi-step upload wizard state + handlers
 ├── lib/
-│   ├── db.ts                           # MongoDB connection singleton
-│   ├── openai.ts                       # OpenAI client singleton
-│   ├── auth.ts                         # JWT sign / verify / session helpers
-│   ├── range.ts                        # Date range utilities for dashboard filters
-│   ├── utils.ts                        # cn() helper (clsx + tailwind-merge)
-│   ├── parsers/                        # File format parsers
+│   ├── db.ts                            # MongoDB connection singleton
+│   ├── openai.ts                        # OpenAI client singleton
+│   ├── auth.ts                          # JWT sign / verify / session helpers
+│   ├── constants.ts                     # App-wide constants (limits, colors, breakpoints, frequencies)
+│   ├── format.ts                        # Currency and date formatting helpers
+│   ├── range.ts                         # Date range utilities + parseDate() + isRangeKey()
+│   ├── utils.ts                         # cn() helper (clsx + tailwind-merge)
+│   ├── parsers/                         # File format parsers
 │   │   ├── pdf-parser.ts
-│   │   ├── csv-parser.ts               # Plain-text CSV rendering
-│   │   ├── csv-row-parser.ts           # Structured CSV/XLS row extraction (no AI)
+│   │   ├── csv-parser.ts                # Plain-text CSV rendering
+│   │   ├── csv-row-parser.ts            # Structured CSV/XLS row extraction (no AI)
 │   │   ├── xls-parser.ts
 │   │   ├── image-parser.ts
-│   │   └── index.ts                    # Unified parseFile() router
-│   ├── services/                       # Business logic services
-│   │   ├── card-detector.ts            # Auto-detect card type
-│   │   ├── extractor.ts               # GPT-4o Mini extraction prompts
-│   │   ├── merchant-normalizer.ts     # Strip noise from raw descriptions
-│   │   ├── category-mapper.ts         # Per-issuer category → app-category dispatch (Tier 1)
-│   │   ├── categorizer.ts             # Tiered categorization (override/source/rule/AI)
-│   │   ├── extraction-pipeline.ts     # parseAndPreview() + confirmAndSave()
-│   │   ├── transaction-dedupe.ts      # dedupeKey + overlap detection for uploads
-│   │   ├── recurring-detector.ts      # Pure recurring detection (clustering + scoring + alerts)
-│   │   └── issuer-adapters/           # Per-issuer StructuredRow → ExtractedTransaction
-│   │       ├── types.ts               # RowAdapter type
-│   │       ├── discover.ts            # Discover-style sign convention
-│   │       ├── chase.ts               # Chase Sapphire (Type column + inverted sign)
-│   │       ├── amex.ts                # Amex BCP (Discover-style sign + description-based payment detection)
-│   │       ├── robinhood.ts           # Robinhood Gold Card (Type column; skips Pending rows)
-│   │       └── index.ts               # getRowAdapter(cardType) dispatch
-│   └── models/                         # MongoDB collection access + queries
+│   │   └── index.ts                     # Unified parseFile() router
+│   ├── services/                        # Business logic services
+│   │   ├── audit-service.ts             # runAuditSample() + shared DisagreementRow/MatchRow types
+│   │   ├── card-detector.ts             # Auto-detect card type
+│   │   ├── extractor.ts                 # GPT-4o Mini extraction prompts
+│   │   ├── export-service.ts            # CSV + PDF generation for /api/export
+│   │   ├── merchant-normalizer.ts       # Strip noise from raw descriptions
+│   │   ├── category-mapper.ts           # Per-issuer category → app-category dispatch (Tier 1)
+│   │   ├── categorizer.ts               # Tiered categorization (override/source/rule/AI)
+│   │   ├── extraction-pipeline.ts       # parseAndPreview() + confirmAndSave()
+│   │   ├── transaction-dedupe.ts        # dedupeKey + overlap detection for uploads
+│   │   ├── transaction-dedupe.test.ts   # Unit tests for deduplication logic
+│   │   ├── recurring-detector.ts        # Pure recurring detection (clustering + scoring + alerts)
+│   │   └── issuer-adapters/             # Per-issuer StructuredRow → ExtractedTransaction
+│   │       ├── types.ts                 # RowAdapter type
+│   │       ├── discover.ts              # Discover-style sign convention
+│   │       ├── chase.ts                 # Chase Sapphire (Type column + inverted sign)
+│   │       ├── amex.ts                  # Amex BCP (Discover-style sign + description-based payment detection)
+│   │       ├── robinhood.ts             # Robinhood Gold Card (Type column; skips Pending rows)
+│   │       └── index.ts                 # getRowAdapter(cardType) dispatch
+│   └── models/                          # MongoDB collection access + queries
 │       ├── users.ts
 │       ├── statements.ts
 │       ├── transactions.ts
-│       ├── category-overrides.ts       # Persisted user category corrections
-│       └── recurring.ts                # Recurring detection + override CRUD
+│       ├── category-overrides.ts        # Persisted user category corrections
+│       └── recurring.ts                 # Recurring detection + override CRUD
 ├── types/
-│   └── index.ts                        # Shared TypeScript types
+│   └── index.ts                         # Shared TypeScript types
 ├── scripts/
-│   ├── seed-user.ts                    # CLI to create user in MongoDB
-│   ├── reset-password.ts               # CLI to update a user's password hash
-│   └── backfill-dedupe-keys.ts         # One-time dedupeKey backfill + index
-├── proxy.ts                            # Auth guard (Next.js 16 convention)
-├── components.json                     # ShadCN configuration
+│   ├── seed-user.ts                     # CLI to create user in MongoDB
+│   ├── reset-password.ts                # CLI to update a user's password hash
+│   └── backfill-dedupe-keys.ts          # One-time dedupeKey backfill + index
+├── proxy.ts                             # Auth guard (Next.js 16 convention)
+├── components.json                      # ShadCN configuration
 ├── tsconfig.json
 ├── package.json
-└── .env.local                          # Environment variables (not committed)
+├── .env.example                         # Environment variable template (commit this)
+└── .env.local                           # Environment variables (not committed)
 ```
 
 ### Grouping philosophy
