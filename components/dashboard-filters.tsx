@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { CARD_LABELS } from "@/types";
 
 const RANGES = [
@@ -16,6 +17,7 @@ const RANGES = [
   { value: "6m", label: "Last 6 months" },
   { value: "12m", label: "Last 12 months" },
   { value: "all", label: "All time" },
+  { value: "custom", label: "Custom range" },
 ];
 
 export function DashboardFilters() {
@@ -23,11 +25,27 @@ export function DashboardFilters() {
   const params = useSearchParams();
   const range = params.get("range") ?? "12m";
   const card = params.get("cardType") ?? "all";
+  const startDate = params.get("startDate") ?? "";
+  const endDate = params.get("endDate") ?? "";
 
-  function update(next: { range?: string; cardType?: string }) {
+  function update(next: { range?: string; cardType?: string; startDate?: string | null; endDate?: string | null }) {
     const sp = new URLSearchParams(params.toString());
-    if (next.range !== undefined) sp.set("range", next.range);
+    if (next.range !== undefined) {
+      sp.set("range", next.range);
+      if (next.range !== "custom") {
+        sp.delete("startDate");
+        sp.delete("endDate");
+      }
+    }
     if (next.cardType !== undefined) sp.set("cardType", next.cardType);
+    if (next.startDate !== undefined) {
+      if (next.startDate) sp.set("startDate", next.startDate);
+      else sp.delete("startDate");
+    }
+    if (next.endDate !== undefined) {
+      if (next.endDate) sp.set("endDate", next.endDate);
+      else sp.delete("endDate");
+    }
     router.push(`/?${sp.toString()}`);
   }
 
@@ -45,6 +63,27 @@ export function DashboardFilters() {
           ))}
         </SelectContent>
       </Select>
+
+      {range === "custom" && (
+        <>
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => update({ startDate: e.target.value || null })}
+            className="w-[160px]"
+            aria-label="Start date"
+          />
+          <span className="text-sm text-muted-foreground">to</span>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => update({ endDate: e.target.value || null })}
+            className="w-[160px]"
+            aria-label="End date"
+          />
+        </>
+      )}
+
       <Select value={card} onValueChange={(v) => v && update({ cardType: v })}>
         <SelectTrigger className="w-[200px]">
           <SelectValue />

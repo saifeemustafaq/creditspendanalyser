@@ -159,7 +159,7 @@ export function AuditResultsView({
                     <span className="text-muted-foreground">→</span>
                     {isManual ? (
                       <>
-                        <Badge className="bg-blue-600">{resolution?.manualCategory}</Badge>
+                        <Badge className={cn(isManual && "bg-blue-600")}>{resolution?.manualCategory}</Badge>
                         <span className="text-muted-foreground">Manual</span>
                       </>
                     ) : (
@@ -192,7 +192,7 @@ export function AuditResultsView({
                   <Button
                     size="icon"
                     variant={isManual ? "default" : "outline"}
-                    className={isManual ? "bg-blue-600 hover:bg-blue-700" : ""}
+                    className={cn(isManual && "bg-blue-600 hover:bg-blue-700")}
                     onClick={() =>
                       setManualOpenId(showManualPicker ? null : d._id)
                     }
@@ -204,7 +204,7 @@ export function AuditResultsView({
                   <Button
                     size="icon"
                     variant={isSkipped ? "default" : "outline"}
-                    className={isSkipped ? "bg-muted-foreground hover:bg-muted-foreground/80" : ""}
+                    className={cn(isSkipped && "bg-muted-foreground hover:bg-muted-foreground/80")}
                     onClick={() => onResolveRow(d._id, { action: "skip" })}
                     aria-label="Skip this item"
                     title="Skip — decide later"

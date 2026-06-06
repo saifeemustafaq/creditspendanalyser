@@ -29,7 +29,7 @@ import { fmtCurrency, fmtDate } from "@/lib/format";
 import { ShieldCheck } from "lucide-react";
 import { AuditDialog } from "@/components/audit-dialog";
 
-interface Tx {
+type Tx = {
   _id: string;
   transactionDate: string;
   postDate: string | null;
@@ -37,8 +37,65 @@ interface Tx {
   category: Category;
   cardType: CardType;
   amount: number;
-  type: "debit" | "credit" | "payment";
+  type: "debit" | "credit" | "payment" | "reward";
   rawDescription: string;
+};
+
+type TransactionData = {
+  key: string;
+  rows: Tx[];
+  total: number;
+  filteredSpend: number;
+  filteredDebitCount: number;
+};
+
+type SpendSummaryProps = {
+  loading: boolean;
+  total: number;
+  filteredSpend: number;
+  filteredDebitCount: number;
+};
+
+function SpendSummary({ loading, total, filteredSpend, filteredDebitCount }: SpendSummaryProps) {
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <Card>
+        <CardContent className="pt-5 pb-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Spend</p>
+          {loading ? (
+            <Skeleton className="h-7 w-28" />
+          ) : (
+            <p className="text-2xl font-semibold tabular-nums">{fmtCurrency(filteredSpend)}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">purchases only</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-5 pb-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Transactions</p>
+          {loading ? (
+            <Skeleton className="h-7 w-16" />
+          ) : (
+            <p className="text-2xl font-semibold tabular-nums">{total}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">matching filters</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="pt-5 pb-4">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Avg per Transaction</p>
+          {loading ? (
+            <Skeleton className="h-7 w-24" />
+          ) : (
+            <p className="text-2xl font-semibold tabular-nums">
+              {filteredDebitCount > 0 ? fmtCurrency(filteredSpend / filteredDebitCount) : "—"}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">purchases only</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function TransactionsView() {
@@ -48,14 +105,18 @@ function TransactionsView() {
   const search = params.get("search") ?? "";
   const cardType = params.get("cardType") ?? "all";
   const category = params.get("category") ?? "all";
+  const startDate = params.get("startDate") ?? "";
+  const endDate = params.get("endDate") ?? "";
   const page = Math.max(0, Number(params.get("page") ?? 0));
 
   const [refreshTick, setRefreshTick] = useState(0);
-  const filterKey = `${page}|${search}|${cardType}|${category}|${refreshTick}`;
-  const [data, setData] = useState<{ key: string; rows: Tx[]; total: number } | null>(null);
+  const filterKey = `${page}|${search}|${cardType}|${category}|${startDate}|${endDate}|${refreshTick}`;
+  const [data, setData] = useState<TransactionData | null>(null);
   const loading = data === null || data.key !== filterKey;
   const rows = data?.key === filterKey ? data.rows : [];
   const total = data?.key === filterKey ? data.total : 0;
+  const filteredSpend = data?.key === filterKey ? data.filteredSpend : 0;
+  const filteredDebitCount = data?.key === filterKey ? data.filteredDebitCount : 0;
 
   const [pendingEdit, setPendingEdit] = useState<{
     transactionId: string;
@@ -128,25 +189,27 @@ function TransactionsView() {
     if (search) sp.set("search", search);
     if (cardType !== "all") sp.set("cardType", cardType);
     if (category !== "all") sp.set("category", category);
+    if (startDate) sp.set("startDate", startDate);
+    if (endDate) sp.set("endDate", endDate);
     (async () => {
       try {
         const res = await fetch(`/api/transactions?${sp.toString()}`, { signal: ctrl.signal });
         if (!res.ok) {
           const body = await res.json().catch(() => ({ error: "Failed to load transactions" }));
           toast.error(body.error ?? "Failed to load transactions");
-          setData({ key: filterKey, rows: [], total: 0 });
+          setData({ key: filterKey, rows: [], total: 0, filteredSpend: 0, filteredDebitCount: 0 });
           return;
         }
         const json = await res.json();
-        setData({ key: filterKey, rows: json.rows ?? [], total: json.total ?? 0 });
+        setData({ key: filterKey, rows: json.rows ?? [], total: json.total ?? 0, filteredSpend: json.filteredSpend ?? 0, filteredDebitCount: json.filteredDebitCount ?? 0 });
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         toast.error(err instanceof Error ? err.message : "Failed to load transactions");
-        setData({ key: filterKey, rows: [], total: 0 });
+        setData({ key: filterKey, rows: [], total: 0, filteredSpend: 0, filteredDebitCount: 0 });
       }
     })();
     return () => ctrl.abort();
-  }, [filterKey, page, search, cardType, category]);
+  }, [filterKey, page, search, cardType, category, startDate, endDate]);
 
   const pages = Math.max(1, Math.ceil(total / TRANSACTIONS_PAGE_SIZE));
 
@@ -163,7 +226,7 @@ function TransactionsView() {
         <CardHeader>
           <CardTitle>Filters</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Input
               placeholder="Search merchant or description"
@@ -212,8 +275,51 @@ function TransactionsView() {
               Audit Categories
             </Button>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted-foreground w-16">Date range</span>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setParam("startDate", e.target.value || null, { resetPage: true })}
+              className="w-[160px]"
+              aria-label="Start date"
+            />
+            <span className="text-sm text-muted-foreground">to</span>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setParam("endDate", e.target.value || null, { resetPage: true })}
+              className="w-[160px]"
+              aria-label="End date"
+            />
+            {(startDate || endDate) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const sp = new URLSearchParams(params.toString());
+                  sp.delete("startDate");
+                  sp.delete("endDate");
+                  sp.delete("page");
+                  router.replace(`/transactions?${sp.toString()}`);
+                }}
+                className="h-9 px-3 text-muted-foreground"
+              >
+                Clear dates
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      {(loading || total > 0) && (
+        <SpendSummary
+          loading={loading}
+          total={total}
+          filteredSpend={filteredSpend}
+          filteredDebitCount={filteredDebitCount}
+        />
+      )}
 
       <Card>
         <CardContent className="p-0">
@@ -258,8 +364,8 @@ function TransactionsView() {
                       <div className="flex items-center gap-2">
                         <span
                           aria-hidden
-                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-[color:var(--c)]"
-                          style={{ "--c": CATEGORY_COLORS[tx.category] } as React.CSSProperties}
+                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: CATEGORY_COLORS[tx.category] }}
                         />
                         <Select
                           value={tx.category}

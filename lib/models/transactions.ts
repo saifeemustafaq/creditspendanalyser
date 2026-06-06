@@ -86,14 +86,21 @@ function buildFilter(f: TransactionFilter): Record<string, unknown> {
   return q;
 }
 
+export type ListTransactionsResult = {
+  rows: TransactionDoc[];
+  total: number;
+  filteredSpend: number;
+  filteredDebitCount: number;
+};
+
 export async function listTransactions(
   filter: TransactionFilter,
   opts: { limit?: number; skip?: number; sort?: Record<string, 1 | -1> } = {},
-): Promise<{ rows: TransactionDoc[]; total: number }> {
+): Promise<ListTransactionsResult> {
   const db = await getDb();
   const q = buildFilter(filter);
   const coll = db.collection<TransactionDoc>(COLLECTIONS.transactions);
-  const [rows, total] = await Promise.all([
+  const [rows, total, spendAgg] = await Promise.all([
     coll
       .find(q)
       .sort(opts.sort ?? { transactionDate: -1 })
@@ -101,8 +108,19 @@ export async function listTransactions(
       .limit(opts.limit ?? 50)
       .toArray(),
     coll.countDocuments(q),
+    coll
+      .aggregate<{ total: number; count: number }>([
+        { $match: { ...q, type: "debit" } },
+        { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+      ])
+      .toArray(),
   ]);
-  return { rows, total };
+  return {
+    rows,
+    total,
+    filteredSpend: spendAgg[0]?.total ?? 0,
+    filteredDebitCount: spendAgg[0]?.count ?? 0,
+  };
 }
 
 export interface CategoryInsight {

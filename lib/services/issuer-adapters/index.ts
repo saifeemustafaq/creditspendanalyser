@@ -1,11 +1,16 @@
 import type { CardType } from "@/types";
 import { discoverAdapter } from "./discover";
 import { chaseAdapter } from "./chase";
+import { amexAdapter } from "./amex";
+import { robinhoodAdapter } from "./robinhood";
 import type { RowAdapter } from "./types";
 
 const ROW_ADAPTERS: Partial<Record<CardType, RowAdapter>> = {
   discover_it_student: discoverAdapter,
   chase_sapphire_preferred: chaseAdapter,
+  chase_prime_visa: chaseAdapter,
+  amex_bcp: amexAdapter,
+  robinhood_gold: robinhoodAdapter,
 };
 
 /**

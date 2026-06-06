@@ -114,7 +114,7 @@ export async function parseAndPreview(args: ParseAndPreviewArgs): Promise<Previe
   const parsed = await parseFile(buffer, filename, mimeType);
 
   let cardType: CardType | null = overrideCardType ?? null;
-  if (!cardType && parsed.text) cardType = detectCardTypeFromText(parsed.text);
+  if (!cardType && parsed.text) cardType = detectCardTypeFromText(parsed.text, filename);
   if (!cardType && parsed.text) cardType = await detectCardTypeViaLLM(parsed.text);
   if (!cardType) cardType = "visa";
 
@@ -123,7 +123,7 @@ export async function parseAndPreview(args: ParseAndPreviewArgs): Promise<Previe
 
   if (parsed.structuredRows && parsed.structuredRows.length > 0) {
     const adapter = getRowAdapter(cardType);
-    extracted = parsed.structuredRows.map(adapter);
+    extracted = parsed.structuredRows.map(adapter).filter((t): t is ExtractedTransaction => t !== null);
     statementDate = detectStatementDateFromRows(parsed.structuredRows);
   } else if (parsed.format === "image") {
     const result = await extractFromImage(cardType, parsed.imageDataUrl ?? "");
@@ -271,7 +271,7 @@ export async function confirmAndSave(args: ConfirmAndSaveArgs): Promise<ConfirmR
     if (txDocs.length > 0) await insertTransactions(txDocs);
   }
 
-  const LEARNABLE_METHODS: CategorizationMethod[] = ["user", "ai"];
+  const LEARNABLE_METHODS: CategorizationMethod[] = ["user", "ai", "source_map"];
   for (const t of savedPreviews) {
     if (!LEARNABLE_METHODS.includes(t.categorizedBy)) continue;
     if (t.category === "Other") continue;

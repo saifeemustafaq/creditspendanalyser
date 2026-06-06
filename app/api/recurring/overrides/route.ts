@@ -82,7 +82,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const raw: unknown = await request.json().catch(() => null);
+    const raw: unknown = await request.json().catch((err) => {
+      console.error("POST /api/recurring/overrides JSON parse failed:", err);
+      return null;
+    });
     const body = parsePost(raw);
     if (!body) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
@@ -119,7 +122,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const raw: unknown = await request.json().catch(() => null);
+    const raw: unknown = await request.json().catch((err) => {
+      console.error("DELETE /api/recurring/overrides JSON parse failed:", err);
+      return null;
+    });
     const body = parseDelete(raw);
     if (!body) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });

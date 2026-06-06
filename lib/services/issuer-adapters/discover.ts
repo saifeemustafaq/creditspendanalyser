@@ -14,6 +14,8 @@ export const discoverAdapter: RowAdapter = (row: StructuredRow): ExtractedTransa
   if (row.amount < 0) {
     if (row.sourceCategory && /payment/i.test(row.sourceCategory)) {
       type = "payment";
+    } else if (row.sourceCategory && /award|rebate|reward/i.test(row.sourceCategory)) {
+      type = "reward";
     } else {
       type = "credit";
     }

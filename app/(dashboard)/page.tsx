@@ -1,12 +1,12 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { aggregateInsights } from "@/lib/models/transactions";
-import { rangeToDates, type RangeKey } from "@/lib/range";
+import { rangeToDates, isRangeKey, parseDate, type RangeKey } from "@/lib/range";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CARD_LABELS, type Category } from "@/types";
+import { CARD_LABELS, CARD_TYPES, type Category } from "@/types";
 import type { CardType } from "@/types";
 import { CATEGORY_COLORS, SUMMARY_ACCENT } from "@/lib/constants";
 import { fmtCurrency, fmtDate } from "@/lib/format";
@@ -24,6 +24,8 @@ export const dynamic = "force-dynamic";
 interface SearchParams {
   range?: string;
   cardType?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export default async function DashboardPage({
@@ -35,9 +37,15 @@ export default async function DashboardPage({
   if (!session) redirect("/login");
   const sp = await searchParams;
 
-  const range = (sp.range as RangeKey) ?? "12m";
-  const cardType = (sp.cardType as CardType | "all") ?? "all";
-  const { startDate, endDate } = rangeToDates(range);
+  const range: RangeKey = isRangeKey(sp.range) ? sp.range : "12m";
+  const cardType: CardType | "all" =
+    sp.cardType && (CARD_TYPES as readonly string[]).includes(sp.cardType)
+      ? (sp.cardType as CardType)
+      : "all";
+  const { startDate, endDate } =
+    range === "custom"
+      ? { startDate: parseDate(sp.startDate ?? null), endDate: parseDate(sp.endDate ?? null) }
+      : rangeToDates(range);
 
   const insights = await aggregateInsights({
     userId: session.userId,
@@ -62,6 +70,7 @@ export default async function DashboardPage({
   const debitCount = insights.typeCounts.find((t) => t._id === "debit");
   const creditCount = insights.typeCounts.find((t) => t._id === "credit");
   const paymentCount = insights.typeCounts.find((t) => t._id === "payment");
+  const rewardCount = insights.typeCounts.find((t) => t._id === "reward");
 
   const empty = txCount === 0;
 
@@ -115,6 +124,12 @@ export default async function DashboardPage({
                     <div className="flex justify-between gap-4">
                       <span>Credits/refunds</span>
                       <span className="tabular-nums">{creditCount?.count ?? 0} · {fmtCurrency(creditCount?.total ?? 0)}</span>
+                    </div>
+                  )}
+                  {(rewardCount?.count ?? 0) > 0 && (
+                    <div className="flex justify-between gap-4">
+                      <span>Rewards</span>
+                      <span className="tabular-nums">{rewardCount?.count ?? 0} · {fmtCurrency(rewardCount?.total ?? 0)}</span>
                     </div>
                   )}
                 </div>
@@ -261,10 +276,8 @@ function SummaryCard({
 }) {
   const content = (
     <Card
-      className={cn("border-l-4", accentColor && "border-l-[color:var(--accent-c)]")}
-      style={
-        accentColor ? ({ "--accent-c": accentColor } as React.CSSProperties) : undefined
-      }
+      className="border-l-4"
+      style={accentColor ? { borderLeftColor: accentColor } : undefined}
     >
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>
