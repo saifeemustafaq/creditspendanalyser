@@ -37,13 +37,20 @@ export const robinhoodAdapter: RowAdapter = (row: StructuredRow): ExtractedTrans
     type = row.amount < 0 ? "payment" : "debit";
   }
 
+  // Prefix rawDescription with the Cardholder name so two authorized users
+  // making same-day same-amount purchases at the same merchant get distinct
+  // dedupe keys and are both saved correctly.
+  const cardholder = row.rawFields["Cardholder"]?.trim();
+  const baseDesc = row.rawFields["Description"] || row.description;
+  const rawDescription = cardholder ? `[${cardholder}] ${baseDesc}` : baseDesc;
+
   return {
     transactionDate: row.transactionDate,
     postDate: row.postDate ?? null,
     merchant,
     amount: Math.abs(row.amount),
     type,
-    rawDescription: row.rawFields["Description"] || row.description,
+    rawDescription,
     sourceCategory: row.sourceCategory,
   };
 };

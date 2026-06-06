@@ -24,13 +24,19 @@ export const amexAdapter: RowAdapter = (row: StructuredRow): ExtractedTransactio
     }
   }
 
+  // Append the Amex per-transaction Reference number to rawDescription so the
+  // SHA256 fingerprint is unique even when two same-day same-amount charges at
+  // the same merchant share an identical Description column value.
+  const ref = row.rawFields["Reference"]?.replace(/^'|'$/g, "").trim();
+  const rawDescription = ref ? `${row.description} REF:${ref}` : row.description;
+
   return {
     transactionDate: row.transactionDate,
     postDate: row.postDate ?? null,
     merchant,
     amount: Math.abs(row.amount),
     type,
-    rawDescription: row.description,
+    rawDescription,
     sourceCategory: row.sourceCategory,
   };
 };
