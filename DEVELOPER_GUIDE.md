@@ -50,12 +50,18 @@ creditspendanalyser/
 │   │   │   ├── page.tsx                # Recurring detection (summary + alerts + table)
 │   │   │   ├── loading.tsx             # Recurring page skeleton
 │   │   │   └── error.tsx               # Recurring page error boundary
-│   │   └── reports/
-│   │       ├── page.tsx                # Reports and export (URL-driven filters)
-│   │       ├── loading.tsx             # Reports page skeleton
-│   │       └── error.tsx               # Reports page error boundary
+│   │   ├── reports/
+│   │   │   ├── page.tsx                # Reports and export (URL-driven filters)
+│   │   │   ├── loading.tsx             # Reports page skeleton
+│   │   │   └── error.tsx               # Reports page error boundary
+│   │   └── coverage/
+│   │       ├── page.tsx                # Statement date coverage map (per-card month blocks)
+│   │       ├── loading.tsx             # Coverage page skeleton
+│   │       └── error.tsx               # Coverage page error boundary
 │   ├── api/
 │   │   ├── auth/route.ts               # Login / logout / session check
+│   │   ├── coverage/route.ts           # GET statement date coverage per card
+│   │   ├── coverage/settings/route.ts  # PATCH card open date / track card
 │   │   ├── upload/
 │   │   │   ├── _helpers.ts             # Shared formData + file validation for upload routes
 │   │   │   ├── route.ts                # Legacy single-shot upload (parse + save)
@@ -82,6 +88,8 @@ creditspendanalyser/
 │   ├── audit-response-parser.ts         # Runtime parser for /audit/sample response
 │   ├── audit-types.ts                   # Client-side audit types (re-exports server shapes from audit-service)
 │   ├── card-badge.tsx                   # Tinted card-type label using CARD_COLORS
+│   ├── coverage-card-panel.tsx          # Per-card coverage row with open-date input
+│   ├── coverage-timeline.tsx            # Month-block statement coverage timeline
 │   ├── category-badge.tsx               # Tinted category label using CATEGORY_COLORS
 │   ├── dashboard-filters.tsx            # Date range + card type filter bar
 │   ├── insight-charts.tsx               # Dashboard chart components
@@ -131,6 +139,8 @@ creditspendanalyser/
 │       ├── users.ts
 │       ├── statements.ts
 │       ├── transactions.ts
+│       ├── coverage.ts                  # Statement date coverage aggregation per card
+│       ├── card-settings.ts             # Per-card open date for coverage tracking
 │       ├── category-overrides.ts        # Persisted user category corrections
 │       └── recurring.ts                 # Recurring detection + override CRUD
 ├── types/
@@ -326,6 +336,7 @@ The app uses **MongoDB** via the native Node.js driver (not Mongoose).
 | `transactions` | Individual transactions (merchant, amount, category, card type, optional `dedupeKey`) |
 | `category_overrides` | Persisted merchant → category corrections (re-applied on future uploads) |
 | `recurring_overrides` | User decisions for recurring detection (include / dismiss / frequency_override) |
+| `card_settings` | Per-card open date for coverage tracking (excludes pre-open periods from missing-date alerts) |
 
 ### Collection access pattern
 

@@ -6,6 +6,20 @@ export function isRangeKey(value: string | null | undefined): value is RangeKey 
   return RANGE_KEYS.includes(value as RangeKey);
 }
 
+/** Parse a YYYY-MM-DD (or ISO prefix) as a UTC calendar date — no timezone shift. */
+export function parseDateOnly(s: string): Date | undefined {
+  const day = s.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return undefined;
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+/** Today's calendar date as UTC midnight (matches date-input semantics). */
+export function calendarTodayUtc(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+}
+
 /** Parse a nullable string into a Date, returning undefined for missing or invalid values. */
 export function parseDate(s: string | null): Date | undefined {
   if (!s) return undefined;

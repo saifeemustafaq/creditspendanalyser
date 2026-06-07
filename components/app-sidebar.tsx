@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { CreditCard, FileText, History, LayoutDashboard, ListOrdered, LogOut, Repeat, Upload } from "lucide-react";
+import { CalendarRange, CreditCard, FileText, History, LayoutDashboard, ListOrdered, LogOut, Repeat, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 const NAV = [
@@ -25,6 +25,7 @@ const NAV = [
   { href: "/transactions", label: "Transactions", icon: ListOrdered },
   { href: "/recurring", label: "Recurring", icon: Repeat },
   { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/coverage", label: "Coverage", icon: CalendarRange },
 ];
 
 export function AppSidebar({ username }: { username: string }) {
