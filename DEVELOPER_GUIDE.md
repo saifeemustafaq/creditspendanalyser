@@ -20,6 +20,7 @@ Baseline rules for structure, reuse, and conventions. Follow these unless there'
 | Export | `jspdf` + `jspdf-autotable` | — |
 | Toasts | Sonner | — |
 | Theming | `next-themes` (light/dark) | — |
+| PWA | Serwist (`@serwist/turbopack`) | — |
 
 ---
 
@@ -78,7 +79,16 @@ creditspendanalyser/
 │   │   ├── insights/route.ts           # Aggregated insights
 │   │   └── export/route.ts             # CSV / PDF export
 │   ├── error.tsx                        # Root error boundary (catch-all)
-│   ├── layout.tsx                       # Root layout (fonts, providers, Toaster)
+│   ├── ~offline/page.tsx                # Public offline fallback (PWA)
+│   ├── manifest.ts                      # Web App Manifest (MetadataRoute)
+│   ├── icon.tsx                         # Favicon (ImageResponse)
+│   ├── apple-icon.tsx                   # Apple touch icon (ImageResponse)
+│   ├── sw.ts                            # Serwist service worker source
+│   ├── serwist/[path]/route.ts          # Serwist SW build route (/serwist/sw.js)
+│   ├── icons/icon-192/route.tsx         # Manifest icon 192×192
+│   ├── icons/icon-512/route.tsx         # Manifest icon 512×512
+│   ├── icons/icon-maskable-512/route.tsx # Maskable icon for Android
+│   ├── layout.tsx                       # Root layout (fonts, providers, MobileToaster, Serwist)
 │   └── globals.css                      # Tailwind v4 + ShadCN theme tokens
 ├── components/
 │   ├── ui/                              # ShadCN-generated UI primitives (do not modify)
@@ -93,13 +103,28 @@ creditspendanalyser/
 │   ├── category-badge.tsx               # Tinted category label using CATEGORY_COLORS
 │   ├── dashboard-filters.tsx            # Date range + card type filter bar
 │   ├── insight-charts.tsx               # Dashboard chart components
+│   ├── mobile-bottom-nav.tsx            # Fixed bottom tab bar for mobile primary routes
+│   ├── mobile-filter-bar.tsx            # Collapsible filter sheet on mobile, inline on desktop
+│   ├── mobile-more-sheet.tsx            # Secondary routes + sign out (mobile More tab)
+│   ├── mobile-page-header.tsx           # Dashboard header with contextual mobile page title
+│   ├── mobile-toaster.tsx               # Responsive Sonner placement (mobile vs desktop)
+│   ├── dashboard-pwa-install-banner.tsx # Mobile-only install banner wrapper for dashboard
+│   ├── pwa-install-banner.tsx           # Dismissible PWA install banner (Chromium + iOS)
+│   ├── pwa-ios-install-sheet.tsx        # iOS Safari Add to Home Screen instructions
+│   ├── serwist-provider.tsx             # Client wrapper for SerwistProvider (SW registration)
+│   ├── table-scroll-region.tsx          # Horizontal scroll wrapper for wide tables on mobile
+│   ├── transaction-row-card.tsx         # Mobile card layout for transaction rows
 │   ├── recurring-add-dialog.tsx         # "Add recurring" dialog (manual include action)
 │   ├── recurring-alerts.tsx             # Alert banner cards on the recurring page
 │   ├── recurring-items-table.tsx        # Recurring items table + row actions
 │   ├── recurring-override-dialog.tsx    # Frequency-override dialog
 │   └── upload-review-table.tsx          # Upload review table with inline category editing
 ├── hooks/
+│   ├── use-container-width.ts             # ResizeObserver hook for responsive chart layout
+│   ├── use-logout.ts                    # Sign-out handler (shared by sidebar + mobile More sheet)
 │   ├── use-mobile.ts                    # Responsive breakpoint hook (uses MOBILE_BREAKPOINT)
+│   ├── use-pwa-install.ts               # beforeinstallprompt + iOS install detection
+│   ├── use-standalone.ts                # display-mode: standalone detection (incl. iOS)
 │   └── use-upload-wizard.ts            # Multi-step upload wizard state + handlers
 ├── lib/
 │   ├── db.ts                            # MongoDB connection singleton
@@ -107,6 +132,10 @@ creditspendanalyser/
 │   ├── auth.ts                          # JWT sign / verify / session helpers
 │   ├── constants.ts                     # App-wide constants (limits, colors, breakpoints, frequencies)
 │   ├── format.ts                        # Currency and date formatting helpers
+│   ├── mobile-dialog.ts                 # Shared dialog classes for mobile-friendly overlays
+│   ├── nav.ts                           # Shared nav items, primary/secondary split, page titles
+│   ├── pwa-icon-art.tsx                 # Shared ImageResponse art for favicon/manifest icons
+│   ├── pwa-runtime-cache.ts             # Secure Serwist runtime caching (static assets only)
 │   ├── range.ts                         # Date range utilities + parseDate() + isRangeKey()
 │   ├── utils.ts                         # cn() helper (clsx + tailwind-merge)
 │   ├── parsers/                         # File format parsers
@@ -472,12 +501,64 @@ When a module needs structured error codes (e.g. parsing failures), extend `Erro
 
 - **ShadCN is the design system.** Use ShadCN components for all standard UI patterns. Do not build custom versions of things ShadCN already provides.
 - **Icons** — Use **Lucide React only**. Do not use emoji in the UI, copy, or code.
-- **Responsive** — The sidebar collapses to a sheet/drawer on mobile. All pages must work on both desktop and mobile viewports.
+- **Responsive** — The sidebar collapses to a sheet/drawer on mobile. All pages must work on both desktop and mobile viewports. See [Mobile layout conventions](#mobile-layout-conventions) below.
 - **Dark mode** — Supported via CSS variables and `next-themes`. The theme tokens are defined in `app/globals.css` using `oklch` color space. `ThemeProvider` from `next-themes` **must** be mounted in the root `app/layout.tsx` wrapping the page content for `useTheme()` to work in any component.
 - **Loading states** — Every route segment under `(dashboard)/` must have a `loading.tsx` with ShadCN `Skeleton` components. Auth routes (`(auth)/`) should also have loading states if they perform async work.
 - **Error states** — Every route segment under `(dashboard)/` must have an `error.tsx` boundary. The root `app/` should also have an `error.tsx` as a catch-all.
-- **Toasts** — Use Sonner for all user feedback (upload success, export ready, errors). The `<Toaster />` is mounted in root `layout.tsx`.
+- **Toasts** — Use Sonner for all user feedback (upload success, export ready, errors). The `<MobileToaster />` is mounted in root `layout.tsx`.
 - **Charts** — Use the ShadCN `chart` component (wraps Recharts). Chart colors use the `--chart-1` through `--chart-5` CSS variables.
+
+### Mobile layout conventions
+
+Mobile work is **additive** — desktop behavior at `md` (768px) and above must not regress. Full rules live in `.cursor/plans/mobile_optimization.plan.md` (Hard rule: desktop parity).
+
+| Concern | Convention |
+|---------|--------------|
+| **Breakpoint** | `MOBILE_BREAKPOINT = 768` in `lib/constants.ts`. Tailwind: `md:` = desktop. Prefer **`md:hidden` / `hidden md:block`** over JS when possible. |
+| **Shell** | `(dashboard)/layout.tsx`: mobile inner scroll + bottom nav padding; **desktop uses document scroll** (`max-md:` scroll trap only). |
+| **Navigation** | `MobileBottomNav` + `MobileMoreSheet` (`md:hidden`). Desktop: `AppSidebar` only. Nav config: `lib/nav.ts`. |
+| **Header** | `MobilePageHeader`: page title on mobile, app name + `SidebarTrigger` on desktop. |
+| **Filters** | `MobileFilterBar`: inline `hidden md:flex` on desktop; bottom sheet on mobile. Lazy-render sheet content when open. |
+| **Tables** | Interactive lists → card component (`TransactionRowCard`, etc.) with `md:hidden`; table with `hidden md:block`. Read-only wide tables → `TableScrollRegion`. |
+| **Charts** | `useContainerWidth()` (`hooks/use-container-width.ts`) for container-aware sizing; Tailwind `md:max-h-*` / `md:h-*` for desktop heights. |
+| **Dialogs** | Import classes from `lib/mobile-dialog.ts`: `mobileDialogContentClass`, `mobileDialogFooterClass`, `mobileDialogDescriptionClass`. Dynamic text (merchant names, filenames) must wrap — never rely on button `whitespace-nowrap`. |
+| **Toasts** | `MobileToaster` uses `useIsMobile()` for position (acceptable one-time hydration flash). |
+| **Safe areas** | `pt-safe`, `pb-safe` in `globals.css`; `--bottom-nav-height` for bottom inset. |
+| **Touch targets** | Primary actions ≥ 44px on mobile (`min-h-11`, `size-11` for icon buttons). |
+| **Loading skeletons** | Match page layout: single-column cards on mobile, table/grid on `md+` (see `transactions/loading.tsx`). |
+
+**When to use `useIsMobile` vs Tailwind-only**
+
+- **Tailwind-only** — Show/hide components, column counts, padding, scroll behavior.
+- **`useIsMobile` / `useContainerWidth`** — When behavior depends on exact width (toast position, chart radii, axis rotation) or container size in a grid column.
+
+### PWA conventions
+
+The app is installable as a PWA on iOS, Android, and desktop Chromium browsers. Offline **data** (transactions, dashboard) is intentionally **not** cached — only static assets and the public offline page.
+
+| Concern | Convention |
+|---------|--------------|
+| **Manifest** | `app/manifest.ts` — `display: standalone`, icons at `/icons/icon-*` routes. |
+| **Icons** | `app/icon.tsx`, `app/apple-icon.tsx`, `lib/pwa-icon-art.tsx` — shared chart/card motif. Theme colors: `PWA_THEME_COLOR`, `PWA_THEME_COLOR_DARK` in `lib/pwa-icon-art.tsx`. |
+| **Service worker** | `app/sw.ts` + `app/serwist/[path]/route.ts` → `/serwist/sw.js`. Registered via `SerwistProviderWrapper` in root layout. **Disabled in development** (`NODE_ENV === "development"`). |
+| **Caching security** | `lib/pwa-runtime-cache.ts` — static assets only. **`NetworkOnly` for `/api/*`, HTML, and RSC.** Never use stock `defaultCache` wholesale. |
+| **Offline fallback** | Public route `app/~offline/page.tsx`. Precached; shown when navigation fails offline. |
+| **Auth / proxy** | `proxy.ts` public paths: `/login`, `/~offline`, `/serwist/*`, `/icons/*`, `/manifest.webmanifest`, `/api/auth`. |
+| **Install UX** | `PwaInstallBanner` in dashboard layout (`md:hidden`). iOS: `PwaIosInstallSheet` via More sheet. Dismiss state: `localStorage` key `pwa-install-dismissed`. |
+| **Standalone** | `useStandalone()` — hide install UI when `display-mode: standalone` or `navigator.standalone` (iOS). |
+| **Production** | PWA features require **HTTPS** (or `localhost`). Run Lighthouse PWA audit against `next build && next start`. |
+
+**Cross-browser QA checklist**
+
+| Platform | Browser | Verify |
+|----------|---------|--------|
+| iPhone | Safari | Add to Home Screen → standalone launch, icon, safe areas |
+| iPhone | Chrome | Install or A2HS fallback sheet |
+| Android | Chrome | Install prompt, standalone, theme color |
+| Android | Firefox | Manifest + SW register, offline page |
+| Desktop | Chrome / Brave / Edge | Install from omnibox, standalone window |
+| Desktop | Firefox | Manifest served, SW registers |
+| All | DevTools → Application | `/api/*` not in Cache Storage; `/serwist/sw.js` active in production |
 
 ---
 
@@ -638,6 +719,10 @@ File size cap: **20 MB** (defined as `MAX_UPLOAD_BYTES` — see §17).
 | Surface all fetch failures via `toast.error()` | Silently swallow failed network requests |
 | Mount `ThemeProvider` in root layout | Rely on `useTheme()` without a provider |
 | Add `loading.tsx` + `error.tsx` for every route segment | Skip loading/error states for dashboard routes |
+| Preserve desktop parity when adding mobile UI (`md:` isolation) | Replace desktop layouts with mobile-only patterns |
+| Use `lib/mobile-dialog.ts` for dialogs with dynamic text | Put long unbreakable strings in dialog buttons |
+| Keep PWA SW from caching `/api/*` or authenticated HTML | Use stock Serwist `defaultCache` without filtering |
+| Register PWA public paths in `proxy.ts` | Block `/serwist/sw.js` or `/~offline` behind auth |
 | Use `proxy.ts` for auth guarding (Next.js 16) | Use `middleware.ts` (deprecated in Next.js 16) |
 | Use named exports; `export default` only for pages | Default-export components or utilities |
 | Keep `.env.example` in sync with all required env vars | Add env vars without updating the template |

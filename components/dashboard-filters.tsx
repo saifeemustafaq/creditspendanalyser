@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { MobileFilterBar } from "@/components/mobile-filter-bar";
 import { CARD_LABELS } from "@/types";
 
 const RANGES = [
@@ -20,15 +21,26 @@ const RANGES = [
   { value: "custom", label: "Custom range" },
 ];
 
-export function DashboardFilters() {
+const DEFAULT_RANGE = "12m";
+
+type DashboardFiltersProps = {
+  pushTo?: string;
+};
+
+export function DashboardFilters({ pushTo = "/" }: DashboardFiltersProps) {
   const router = useRouter();
   const params = useSearchParams();
-  const range = params.get("range") ?? "12m";
+  const range = params.get("range") ?? DEFAULT_RANGE;
   const card = params.get("cardType") ?? "all";
   const startDate = params.get("startDate") ?? "";
   const endDate = params.get("endDate") ?? "";
 
-  function update(next: { range?: string; cardType?: string; startDate?: string | null; endDate?: string | null }) {
+  function update(next: {
+    range?: string;
+    cardType?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+  }) {
     const sp = new URLSearchParams(params.toString());
     if (next.range !== undefined) {
       sp.set("range", next.range);
@@ -46,57 +58,73 @@ export function DashboardFilters() {
       if (next.endDate) sp.set("endDate", next.endDate);
       else sp.delete("endDate");
     }
-    router.push(`/?${sp.toString()}`);
+    router.push(`${pushTo}?${sp.toString()}`);
+  }
+
+  const activeCount =
+    (range !== DEFAULT_RANGE ? 1 : 0) + (card !== "all" ? 1 : 0);
+  const rangeLabel = RANGES.find((entry) => entry.value === range)?.label ?? range;
+
+  function renderFilters() {
+    return (
+      <>
+        <Select value={range} onValueChange={(v) => v && update({ range: v })}>
+          <SelectTrigger className="w-full md:w-[160px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {RANGES.map((entry) => (
+              <SelectItem key={entry.value} value={entry.value}>
+                {entry.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {range === "custom" ? (
+          <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:gap-2">
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => update({ startDate: e.target.value || null })}
+              className="w-full md:w-[160px]"
+              aria-label="Start date"
+            />
+            <span className="hidden text-sm text-muted-foreground md:inline">to</span>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => update({ endDate: e.target.value || null })}
+              className="w-full md:w-[160px]"
+              aria-label="End date"
+            />
+          </div>
+        ) : null}
+
+        <Select value={card} onValueChange={(v) => v && update({ cardType: v })}>
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All cards</SelectItem>
+            {Object.entries(CARD_LABELS).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </>
+    );
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Select value={range} onValueChange={(v) => v && update({ range: v })}>
-        <SelectTrigger className="w-[160px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {RANGES.map((r) => (
-            <SelectItem key={r.value} value={r.value}>
-              {r.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {range === "custom" && (
-        <>
-          <Input
-            type="date"
-            value={startDate}
-            onChange={(e) => update({ startDate: e.target.value || null })}
-            className="w-[160px]"
-            aria-label="Start date"
-          />
-          <span className="text-sm text-muted-foreground">to</span>
-          <Input
-            type="date"
-            value={endDate}
-            onChange={(e) => update({ endDate: e.target.value || null })}
-            className="w-[160px]"
-            aria-label="End date"
-          />
-        </>
-      )}
-
-      <Select value={card} onValueChange={(v) => v && update({ cardType: v })}>
-        <SelectTrigger className="w-[200px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All cards</SelectItem>
-          {Object.entries(CARD_LABELS).map(([k, v]) => (
-            <SelectItem key={k} value={k}>
-              {v}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <MobileFilterBar
+      activeCount={activeCount}
+      quickChips={
+        <span className="min-w-0 truncate text-xs text-muted-foreground">{rangeLabel}</span>
+      }
+      renderFilters={renderFilters}
+    />
   );
 }

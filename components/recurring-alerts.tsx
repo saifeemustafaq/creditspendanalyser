@@ -15,15 +15,15 @@ export function RecurringAlerts({ alerts }: { alerts: RecurringAlert[] }) {
             a.severity === "warning" ? "border-l-amber-500" : "border-l-blue-500",
           )}
         >
-          <CardContent className="flex items-start gap-3 py-3">
+          <CardContent className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start">
             {a.severity === "warning" ? (
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
             ) : (
               <Info className="mt-0.5 size-4 shrink-0 text-blue-500" />
             )}
-            <div className="flex-1 text-sm">
-              <div className="font-medium">{a.merchant}</div>
-              <div className="text-muted-foreground">{a.message}</div>
+            <div className="min-w-0 flex-1 text-sm">
+              <div className="break-words font-medium">{a.merchant}</div>
+              <div className="break-words text-muted-foreground">{a.message}</div>
             </div>
           </CardContent>
         </Card>

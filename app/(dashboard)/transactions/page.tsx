@@ -28,6 +28,14 @@ import { CATEGORY_COLORS, TRANSACTIONS_PAGE_SIZE } from "@/lib/constants";
 import { fmtCurrency, fmtDate } from "@/lib/format";
 import { ShieldCheck } from "lucide-react";
 import { AuditDialog } from "@/components/audit-dialog";
+import { MobileFilterBar } from "@/components/mobile-filter-bar";
+import { TransactionRowCard } from "@/components/transaction-row-card";
+import {
+  mobileDialogContentClass,
+  mobileDialogDescriptionClass,
+  mobileDialogFooterClass,
+} from "@/lib/mobile-dialog";
+import { cn } from "@/lib/utils";
 
 type Tx = {
   _id: string;
@@ -58,7 +66,7 @@ type SpendSummaryProps = {
 
 function SpendSummary({ loading, total, filteredSpend, filteredDebitCount }: SpendSummaryProps) {
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <Card>
         <CardContent className="pt-5 pb-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Spend</p>
@@ -213,6 +221,103 @@ function TransactionsView() {
 
   const pages = Math.max(1, Math.ceil(total / TRANSACTIONS_PAGE_SIZE));
 
+  const filterActiveCount =
+    (cardType !== "all" ? 1 : 0) +
+    (category !== "all" ? 1 : 0) +
+    (startDate || endDate ? 1 : 0);
+
+  const filterQuickLabel = [
+    cardType !== "all" ? CARD_LABELS[cardType as CardType] : null,
+    category !== "all" ? category : null,
+    startDate || endDate ? "Custom dates" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  function clearDates() {
+    const sp = new URLSearchParams(params.toString());
+    sp.delete("startDate");
+    sp.delete("endDate");
+    sp.delete("page");
+    router.replace(`/transactions?${sp.toString()}`);
+  }
+
+  function renderTransactionFilters() {
+    return (
+      <>
+        <Select
+          value={cardType}
+          onValueChange={(v) => setParam("cardType", v ?? "all", { resetPage: true })}
+        >
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All cards</SelectItem>
+            {Object.entries(CARD_LABELS).map(([key, label]) => (
+              <SelectItem key={key} value={key}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={category}
+          onValueChange={(v) => setParam("category", v ?? "all", { resetPage: true })}
+        >
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {CATEGORIES.map((entry) => (
+              <SelectItem key={entry} value={entry}>
+                {entry}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          onClick={() => setAuditOpen(true)}
+          disabled={total === 0}
+          className="hidden w-full md:inline-flex md:w-auto"
+        >
+          <ShieldCheck className="mr-2 h-4 w-4" />
+          Audit Categories
+        </Button>
+        <div className="flex w-full flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+          <span className="text-sm text-muted-foreground md:w-16">Date range</span>
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setParam("startDate", e.target.value || null, { resetPage: true })}
+            className="w-full md:w-[160px]"
+            aria-label="Start date"
+          />
+          <span className="text-sm text-muted-foreground">to</span>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => setParam("endDate", e.target.value || null, { resetPage: true })}
+            className="w-full md:w-[160px]"
+            aria-label="End date"
+          />
+          {startDate || endDate ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearDates}
+              className="h-9 w-full px-3 text-muted-foreground md:w-auto"
+            >
+              Clear dates
+            </Button>
+          ) : null}
+        </div>
+      </>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div>
@@ -227,88 +332,35 @@ function TransactionsView() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              placeholder="Search merchant or description"
-              value={search}
-              onChange={(e) => setParam("search", e.target.value || null, { resetPage: true })}
-              className="w-72"
-            />
-            <Select
-              value={cardType}
-              onValueChange={(v) => setParam("cardType", v ?? "all", { resetPage: true })}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All cards</SelectItem>
-                {Object.entries(CARD_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>
-                    {v}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={category}
-              onValueChange={(v) => setParam("category", v ?? "all", { resetPage: true })}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              onClick={() => setAuditOpen(true)}
-              disabled={total === 0}
-            >
-              <ShieldCheck className="mr-2 h-4 w-4" />
-              Audit Categories
-            </Button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground w-16">Date range</span>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setParam("startDate", e.target.value || null, { resetPage: true })}
-              className="w-[160px]"
-              aria-label="Start date"
-            />
-            <span className="text-sm text-muted-foreground">to</span>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => setParam("endDate", e.target.value || null, { resetPage: true })}
-              className="w-[160px]"
-              aria-label="End date"
-            />
-            {(startDate || endDate) && (
+          <Input
+            placeholder="Search merchant or description"
+            value={search}
+            onChange={(e) => setParam("search", e.target.value || null, { resetPage: true })}
+            className="w-full md:w-72"
+          />
+          <MobileFilterBar
+            activeCount={filterActiveCount}
+            quickChips={
+              filterQuickLabel ? (
+                <span className="min-w-0 truncate text-xs text-muted-foreground">
+                  {filterQuickLabel}
+                </span>
+              ) : null
+            }
+            desktopClassName="flex flex-wrap items-center gap-2"
+            footer={
               <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const sp = new URLSearchParams(params.toString());
-                  sp.delete("startDate");
-                  sp.delete("endDate");
-                  sp.delete("page");
-                  router.replace(`/transactions?${sp.toString()}`);
-                }}
-                className="h-9 px-3 text-muted-foreground"
+                variant="outline"
+                onClick={() => setAuditOpen(true)}
+                disabled={total === 0}
+                className="w-full"
               >
-                Clear dates
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Audit Categories
               </Button>
-            )}
-          </div>
+            }
+            renderFilters={renderTransactionFilters}
+          />
         </CardContent>
       </Card>
 
@@ -323,94 +375,133 @@ function TransactionsView() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Merchant</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Card</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 5 }).map((__, j) => (
-                      <TableCell key={j}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : rows.length === 0 ? (
+          <div className="divide-y md:hidden">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="space-y-2 px-4 py-3">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ))
+            ) : rows.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                No transactions match the filters.
+              </p>
+            ) : (
+              rows.map((tx) => (
+                <TransactionRowCard
+                  key={tx._id}
+                  merchant={tx.merchant}
+                  rawDescription={tx.rawDescription}
+                  transactionDate={tx.transactionDate}
+                  category={tx.category}
+                  cardType={tx.cardType}
+                  amount={tx.amount}
+                  type={tx.type}
+                  onCategoryChange={(nextCategory) => {
+                    if (nextCategory === tx.category) return;
+                    setPendingEdit({
+                      transactionId: tx._id,
+                      merchant: tx.merchant,
+                      category: nextCategory,
+                    });
+                  }}
+                />
+              ))
+            )}
+          </div>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
-                    No transactions match the filters.
-                  </TableCell>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Merchant</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Card</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
-              ) : (
-                rows.map((tx) => (
-                  <TableRow key={tx._id}>
-                    <TableCell>{fmtDate(tx.transactionDate)}</TableCell>
-                    <TableCell>
-                      <div className="font-medium">{tx.merchant}</div>
-                      {tx.rawDescription && tx.rawDescription !== tx.merchant && (
-                        <div className="text-xs text-muted-foreground">{tx.rawDescription}</div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span
-                          aria-hidden
-                          className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: CATEGORY_COLORS[tx.category] }}
-                        />
-                        <Select
-                          value={tx.category}
-                          onValueChange={(v) => {
-                            if (v === tx.category) return;
-                            setPendingEdit({
-                              transactionId: tx._id,
-                              merchant: tx.merchant,
-                              category: v as Category,
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="h-8 w-[160px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {CATEGORIES.map((c) => (
-                              <SelectItem key={c} value={c}>
-                                {c}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {CARD_LABELS[tx.cardType]}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {tx.type !== "debit" && "−"}
-                      {fmtCurrency(tx.amount)}
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 8 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 5 }).map((__, j) => (
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
+                      No transactions match the filters.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  rows.map((tx) => (
+                    <TableRow key={tx._id}>
+                      <TableCell>{fmtDate(tx.transactionDate)}</TableCell>
+                      <TableCell>
+                        <div className="font-medium">{tx.merchant}</div>
+                        {tx.rawDescription && tx.rawDescription !== tx.merchant && (
+                          <div className="text-xs text-muted-foreground">{tx.rawDescription}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span
+                            aria-hidden
+                            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: CATEGORY_COLORS[tx.category] }}
+                          />
+                          <Select
+                            value={tx.category}
+                            onValueChange={(v) => {
+                              if (v === tx.category) return;
+                              setPendingEdit({
+                                transactionId: tx._id,
+                                merchant: tx.merchant,
+                                category: v as Category,
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="h-8 w-[160px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CATEGORIES.map((c) => (
+                                <SelectItem key={c} value={c}>
+                                  {c}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {CARD_LABELS[tx.cardType]}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {tx.type !== "debit" && "−"}
+                        {fmtCurrency(tx.amount)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="outline"
           disabled={page === 0 || loading}
           onClick={() => setParam("page", String(Math.max(0, page - 1)))}
+          className="min-h-11 w-full sm:w-auto"
         >
           Previous
         </Button>
@@ -418,6 +509,7 @@ function TransactionsView() {
           variant="outline"
           disabled={page + 1 >= pages || loading}
           onClick={() => setParam("page", String(page + 1))}
+          className="min-h-11 w-full sm:w-auto"
         >
           Next
         </Button>
@@ -437,34 +529,37 @@ function TransactionsView() {
           if (!open && savingScope === null) setPendingEdit(null);
         }}
       >
-        <DialogContent>
+        <DialogContent className={cn(mobileDialogContentClass, "sm:max-w-md")}>
           <DialogHeader>
             <DialogTitle>Apply category change</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className={mobileDialogDescriptionClass}>
               {pendingEdit
                 ? `Change ${pendingEdit.merchant} to ${pendingEdit.category}.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <DialogFooter className={mobileDialogFooterClass}>
             <Button
               onClick={() => applyEdit("merchant")}
               disabled={savingScope !== null}
             >
-              {savingScope === "merchant"
-                ? "Updating…"
-                : pendingEdit
-                  ? `Apply to all transactions from ${pendingEdit.merchant}`
-                  : ""}
+              {savingScope === "merchant" ? (
+                "Updating…"
+              ) : pendingEdit ? (
+                <span className="block text-center">
+                  <span className="block">Apply to all transactions from</span>
+                  <span className="block font-semibold break-words">{pendingEdit.merchant}</span>
+                </span>
+              ) : (
+                ""
+              )}
             </Button>
             <Button
               variant="outline"
               onClick={() => applyEdit("single")}
               disabled={savingScope !== null}
             >
-              {savingScope === "single"
-                ? "Updating…"
-                : "Apply to this transaction only"}
+              {savingScope === "single" ? "Updating…" : "Apply to this transaction only"}
             </Button>
           </DialogFooter>
         </DialogContent>

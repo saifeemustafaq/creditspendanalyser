@@ -29,7 +29,13 @@ import {
   type CardType,
   type Category,
 } from "@/types";
-import { AuditResultsView } from "./audit-results-view";
+import { AuditResultsView } from "@/components/audit-results-view";
+import {
+  mobileDialogContentClass,
+  mobileDialogDescriptionClass,
+  mobileDialogFooterClass,
+} from "@/lib/mobile-dialog";
+import { cn } from "@/lib/utils";
 import { parseAuditResponse } from "./audit-response-parser";
 import {
   SOURCE_LABELS,
@@ -226,12 +232,12 @@ export function AuditDialog({
         }
       }}
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className={cn(mobileDialogContentClass, "sm:max-w-3xl")}>
         {phase === "config" && (
           <>
             <DialogHeader>
               <DialogTitle>Audit Categories</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className={mobileDialogDescriptionClass}>
                 Picks a random sample of transactions and cross-checks their categories with AI.
                 Prioritizes transactions that haven&apos;t been audited before.
               </DialogDescription>
@@ -257,7 +263,7 @@ export function AuditDialog({
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Sources to audit</label>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {(Object.keys(SOURCE_LABELS) as AuditableSource[]).map((s) => {
                     const active = sources.has(s);
                     return (
@@ -315,7 +321,7 @@ export function AuditDialog({
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className={mobileDialogFooterClass}>
               <Button variant="outline" onClick={resetAndClose}>
                 Cancel
               </Button>

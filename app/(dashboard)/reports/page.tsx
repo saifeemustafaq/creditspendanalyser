@@ -20,6 +20,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CARD_LABELS, CATEGORIES, type CardType } from "@/types";
 import { fmtCurrency, fmtDate } from "@/lib/format";
 import { Download } from "lucide-react";
+import { MobileFilterBar } from "@/components/mobile-filter-bar";
+import { TableScrollRegion } from "@/components/table-scroll-region";
 
 interface Statement {
   _id: string;
@@ -134,63 +136,86 @@ export default function ReportsPage() {
           <CardDescription>Filter, then download as CSV or PDF.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <Label htmlFor="start">Start date</Label>
-              <Input
-                id="start"
-                type="date"
-                value={startDate}
-                onChange={(e) => updateFilter("startDate", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end">End date</Label>
-              <Input
-                id="end"
-                type="date"
-                value={endDate}
-                onChange={(e) => updateFilter("endDate", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Card</Label>
-              <Select value={cardType} onValueChange={(v) => updateFilter("cardType", v ?? "all")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All cards</SelectItem>
-                  {Object.entries(CARD_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>
-                      {v}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select
-                value={category}
-                onValueChange={(v) => updateFilter("category", v ?? "all")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => handleExport("csv")} disabled={isExporting !== null}>
+          <MobileFilterBar
+            activeCount={
+              (startDate ? 1 : 0) +
+              (endDate ? 1 : 0) +
+              (cardType !== "all" ? 1 : 0) +
+              (category !== "all" ? 1 : 0)
+            }
+            quickChips={
+              startDate || endDate ? (
+                <span className="min-w-0 truncate text-xs text-muted-foreground">
+                  {startDate || "…"} – {endDate || "…"}
+                </span>
+              ) : null
+            }
+            desktopClassName="grid w-full gap-4 md:grid-cols-2 lg:grid-cols-4"
+            renderFilters={() => (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="start">Start date</Label>
+                  <Input
+                    id="start"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => updateFilter("startDate", e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end">End date</Label>
+                  <Input
+                    id="end"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => updateFilter("endDate", e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Card</Label>
+                  <Select
+                    value={cardType}
+                    onValueChange={(v) => updateFilter("cardType", v ?? "all")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All cards</SelectItem>
+                      {Object.entries(CARD_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Select
+                    value={category}
+                    onValueChange={(v) => updateFilter("category", v ?? "all")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      {CATEGORIES.map((entry) => (
+                        <SelectItem key={entry} value={entry}>
+                          {entry}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button onClick={() => handleExport("csv")} disabled={isExporting !== null} className="w-full sm:w-auto">
               <Download />
               {isExporting === "csv" ? "Exporting…" : "Export CSV"}
             </Button>
@@ -198,6 +223,7 @@ export default function ReportsPage() {
               variant="secondary"
               onClick={() => handleExport("pdf")}
               disabled={isExporting !== null}
+              className="w-full sm:w-auto"
             >
               <Download />
               {isExporting === "pdf" ? "Exporting…" : "Export PDF"}
@@ -212,52 +238,61 @@ export default function ReportsPage() {
           <CardDescription>Every uploaded statement.</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Uploaded</TableHead>
-                <TableHead>Filename</TableHead>
-                <TableHead>Card</TableHead>
-                <TableHead>Statement date</TableHead>
-                <TableHead className="text-right">Transactions</TableHead>
-                <TableHead className="text-right">Total spend</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {statements === null ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 6 }).map((__, j) => (
-                      <TableCell key={j}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : statements.length === 0 ? (
+          <TableScrollRegion>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
-                    No statements uploaded yet.
-                  </TableCell>
+                  <TableHead className="hidden md:table-cell">Uploaded</TableHead>
+                  <TableHead>Filename</TableHead>
+                  <TableHead className="hidden sm:table-cell">Card</TableHead>
+                  <TableHead className="hidden lg:table-cell">Statement date</TableHead>
+                  <TableHead className="hidden sm:table-cell text-right">Transactions</TableHead>
+                  <TableHead className="text-right">Total spend</TableHead>
                 </TableRow>
-              ) : (
-                statements.map((s) => (
-                  <TableRow key={s._id}>
-                    <TableCell>{fmtDate(s.uploadedAt)}</TableCell>
-                    <TableCell className="font-medium">{s.originalFilename}</TableCell>
-                    <TableCell>
-                      <CardBadge cardType={s.cardType} />
-                    </TableCell>
-                    <TableCell>{fmtDate(s.statementDate)}</TableCell>
-                    <TableCell className="text-right tabular-nums">{s.transactionCount}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmtCurrency(s.totalAmount)}
+              </TableHeader>
+              <TableBody>
+                {statements === null ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 6 }).map((__, j) => (
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : statements.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                      No statements uploaded yet.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  statements.map((s) => (
+                    <TableRow key={s._id}>
+                      <TableCell className="hidden md:table-cell">{fmtDate(s.uploadedAt)}</TableCell>
+                      <TableCell className="max-w-[200px] font-medium md:max-w-none">
+                        <span className="line-clamp-2 md:line-clamp-none">{s.originalFilename}</span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground sm:hidden">
+                          <CardBadge cardType={s.cardType} />
+                        </span>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <CardBadge cardType={s.cardType} />
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">{fmtDate(s.statementDate)}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-right tabular-nums">
+                        {s.transactionCount}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtCurrency(s.totalAmount)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableScrollRegion>
         </CardContent>
       </Card>
     </div>

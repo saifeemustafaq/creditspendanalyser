@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { mobileDialogFooterClass } from "@/lib/mobile-dialog";
 import {
   Select,
   SelectContent,
@@ -64,7 +65,7 @@ export function AuditResultsView({
             overrides. Try a wider scope or run an audit later after new uploads.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className={mobileDialogFooterClass}>
           <Button onClick={onCancel}>Close</Button>
         </DialogFooter>
       </>
@@ -81,7 +82,7 @@ export function AuditResultsView({
             issuer mappings look accurate.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className={mobileDialogFooterClass}>
           <Button onClick={onSave} disabled={saving}>
             {saving ? "Saving…" : "Mark sample as audited"}
           </Button>
@@ -268,7 +269,7 @@ export function AuditResultsView({
         </div>
       )}
 
-      <DialogFooter>
+      <DialogFooter className={mobileDialogFooterClass}>
         <Button variant="outline" onClick={onCancel} disabled={saving}>
           Cancel
         </Button>

@@ -212,6 +212,71 @@ type Props = {
   selectedYear: number;
 };
 
+type MonthData = {
+  year: number;
+  month: number;
+  label: string;
+  segments: MonthSegment[];
+};
+
+function MonthColumn({
+  month,
+  color,
+  isLast,
+  className,
+  style,
+  barClassName,
+  labelClassName,
+}: {
+  month: MonthData;
+  color: string;
+  isLast: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  barClassName: string;
+  labelClassName: string;
+}) {
+  return (
+    <div
+      className={cn("flex min-w-0 flex-col", !isLast && "border-r", className)}
+      style={style}
+    >
+      <div className={cn("flex w-full overflow-hidden", barClassName)}>
+        {month.segments.map((seg, si) => {
+          const label =
+            seg.type === "covered"
+              ? `Uploaded: ${fmtRangeLabel(seg.start, seg.end)}`
+              : `Missing: ${fmtRangeLabel(seg.start, seg.end)}`;
+          return (
+            <Tooltip key={si}>
+              <TooltipTrigger
+                render={
+                  <div
+                    className={cn(
+                      "h-full min-w-0",
+                      seg.type === "uncovered" && "cursor-help bg-muted",
+                    )}
+                    style={{
+                      width: `${seg.fraction * 100}%`,
+                      ...(seg.type === "covered" ? { backgroundColor: color } : {}),
+                    }}
+                  />
+                }
+              />
+              <TooltipContent className="max-w-xs text-xs leading-relaxed">
+                {label}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+      <div className={cn("text-center leading-tight text-muted-foreground", labelClassName)}>
+        {month.label}
+      </div>
+    </div>
+  );
+}
+
 export function CoverageTimeline({
   cardType,
   coveredRanges,
@@ -285,52 +350,44 @@ export function CoverageTimeline({
 
   return (
     <div className="space-y-2">
-      <div className="w-full overflow-hidden rounded border">
+      {/* Desktop: equal-width months in one row */}
+      <div className="hidden w-full overflow-hidden rounded border md:block">
         <div className="flex w-full">
-          {monthData.map((m, idx) => {
-            const isLast = idx === totalMonths - 1;
-            return (
-              <div
-                key={`${m.year}-${m.month}`}
-                className={cn("flex min-w-0 flex-col", !isLast && "border-r")}
-                style={{ width: `${(1 / totalMonths) * 100}%` }}
-              >
-                <div className="flex h-5 w-full overflow-hidden">
-                  {m.segments.map((seg, si) => {
-                    const label =
-                      seg.type === "covered"
-                        ? `Uploaded: ${fmtRangeLabel(seg.start, seg.end)}`
-                        : `Missing: ${fmtRangeLabel(seg.start, seg.end)}`;
-                    return (
-                      <Tooltip key={si}>
-                        <TooltipTrigger
-                          render={
-                            <div
-                              className={cn(
-                                "h-full min-w-0",
-                                seg.type === "uncovered" && "cursor-help bg-muted",
-                              )}
-                              style={{
-                                width: `${seg.fraction * 100}%`,
-                                ...(seg.type === "covered" ? { backgroundColor: color } : {}),
-                              }}
-                            />
-                          }
-                        />
-                        <TooltipContent className="max-w-xs text-xs leading-relaxed">
-                          {label}
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </div>
-                <div className="py-0.5 text-center text-[9px] leading-tight text-muted-foreground">
-                  {m.label}
-                </div>
-              </div>
-            );
-          })}
+          {monthData.map((m, idx) => (
+            <MonthColumn
+              key={`${m.year}-${m.month}-desktop`}
+              month={m}
+              color={color}
+              isLast={idx === totalMonths - 1}
+              style={{ width: `${(1 / totalMonths) * 100}%` }}
+              barClassName="h-5"
+              labelClassName="py-0.5 text-[9px]"
+            />
+          ))}
         </div>
+      </div>
+
+      {/* Mobile: horizontal scroll with snap */}
+      <div className="relative md:hidden">
+        <div className="overflow-x-auto overscroll-x-contain snap-x snap-mandatory rounded border">
+          <div className="flex w-max min-w-full">
+            {monthData.map((m, idx) => (
+              <MonthColumn
+                key={`${m.year}-${m.month}-mobile`}
+                month={m}
+                color={color}
+                isLast={idx === totalMonths - 1}
+                className="w-12 shrink-0 snap-start"
+                barClassName="h-8"
+                labelClassName="py-1 text-[10px]"
+              />
+            ))}
+          </div>
+        </div>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-background to-transparent"
+        />
       </div>
 
       {missingRanges.length > 0 && (

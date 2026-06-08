@@ -25,6 +25,13 @@ import {
 } from "@/components/ui/table";
 import { CARD_LABELS, type CardType, type CategorizationMethod, type UploadStats } from "@/types";
 import { fmtCurrency, fmtDate } from "@/lib/format";
+import { CardBadge } from "@/components/card-badge";
+import {
+  mobileDialogContentClass,
+  mobileDialogDescriptionClass,
+  mobileDialogFooterClass,
+} from "@/lib/mobile-dialog";
+import { cn } from "@/lib/utils";
 
 interface StatementRow {
   _id: string;
@@ -153,76 +160,124 @@ export default function UploadsPage() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Uploaded</TableHead>
-                <TableHead>Filename</TableHead>
-                <TableHead>Card</TableHead>
-                <TableHead>Format</TableHead>
-                <TableHead className="text-right">Transactions</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Categorization</TableHead>
-                <TableHead className="w-[60px]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 8 }).map((__, j) => (
-                      <TableCell key={j}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : rows.length === 0 ? (
+          <div className="divide-y md:hidden">
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-2 px-4 py-3">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ))
+            ) : rows.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-muted-foreground">No uploads yet.</p>
+            ) : (
+              rows.map((row) => (
+                <div key={row._id} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium" title={row.originalFilename}>
+                        {row.originalFilename}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {fmtDate(row.uploadedAt)} · {row.fileFormat.toUpperCase()}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-11 shrink-0"
+                      onClick={() => setPendingDelete(row)}
+                      aria-label={`Delete upload ${row.originalFilename}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <CardBadge cardType={row.cardType} />
+                    <span className="text-xs text-muted-foreground">
+                      {row.transactionCount} tx · {fmtCurrency(row.totalAmount)}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <CategorizationBadges stats={row.uploadStats} />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={8}
-                    className="text-center text-sm text-muted-foreground"
-                  >
-                    No uploads yet.
-                  </TableCell>
+                  <TableHead>Uploaded</TableHead>
+                  <TableHead>Filename</TableHead>
+                  <TableHead>Card</TableHead>
+                  <TableHead>Format</TableHead>
+                  <TableHead className="text-right">Transactions</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Categorization</TableHead>
+                  <TableHead className="w-[60px]" />
                 </TableRow>
-              ) : (
-                rows.map((row) => (
-                  <TableRow key={row._id}>
-                    <TableCell>{fmtDate(row.uploadedAt)}</TableCell>
-                    <TableCell className="max-w-[260px] truncate" title={row.originalFilename}>
-                      {row.originalFilename}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {CARD_LABELS[row.cardType]}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground uppercase">
-                      {row.fileFormat}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {row.transactionCount}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {fmtCurrency(row.totalAmount)}
-                    </TableCell>
-                    <TableCell>
-                      <CategorizationBadges stats={row.uploadStats} />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setPendingDelete(row)}
-                        aria-label={`Delete upload ${row.originalFilename}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 8 }).map((__, j) => (
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-full" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className="text-center text-sm text-muted-foreground"
+                    >
+                      No uploads yet.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  rows.map((row) => (
+                    <TableRow key={row._id}>
+                      <TableCell>{fmtDate(row.uploadedAt)}</TableCell>
+                      <TableCell className="max-w-[260px] truncate" title={row.originalFilename}>
+                        {row.originalFilename}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {CARD_LABELS[row.cardType]}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground uppercase">
+                        {row.fileFormat}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {row.transactionCount}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {fmtCurrency(row.totalAmount)}
+                      </TableCell>
+                      <TableCell>
+                        <CategorizationBadges stats={row.uploadStats} />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setPendingDelete(row)}
+                          aria-label={`Delete upload ${row.originalFilename}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -232,16 +287,16 @@ export default function UploadsPage() {
           if (!open && !deleting) setPendingDelete(null);
         }}
       >
-        <DialogContent>
+        <DialogContent className={cn(mobileDialogContentClass, "sm:max-w-lg")}>
           <DialogHeader>
             <DialogTitle>Delete this upload?</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className={mobileDialogDescriptionClass}>
               {pendingDelete
                 ? `This will remove "${pendingDelete.originalFilename}" and its ${pendingDelete.transactionCount} transactions. Category overrides will be kept.`
                 : ""}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className={mobileDialogFooterClass}>
             <Button
               variant="outline"
               onClick={() => setPendingDelete(null)}

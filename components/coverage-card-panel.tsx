@@ -61,8 +61,8 @@ export function CoverageCardPanel({ entry, selectedYear, onStartDateSaved }: Pro
 
   return (
     <div className="space-y-3 rounded-lg border p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <CalendarRange className="size-4 shrink-0 text-muted-foreground" />
           <span className="text-sm font-medium">{CARD_LABELS[entry.cardType]}</span>
           {!hasUploads && (
@@ -72,7 +72,7 @@ export function CoverageCardPanel({ entry, selectedYear, onStartDateSaved }: Pro
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <Label htmlFor={`start-${entry.cardType}`} className="text-xs text-muted-foreground">
             Card opened
           </Label>
@@ -86,13 +86,13 @@ export function CoverageCardPanel({ entry, selectedYear, onStartDateSaved }: Pro
               const saved = toDateInputValue(entry.startDate);
               if (startDate !== saved) void saveStartDate(startDate);
             }}
-            className="h-8 w-[150px] text-xs"
+            className="h-8 w-full text-xs sm:w-[150px]"
           />
           {startDate && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-xs"
+              className="h-8 w-full px-2 text-xs sm:w-auto"
               disabled={saving}
               onClick={() => {
                 setStartDate("");

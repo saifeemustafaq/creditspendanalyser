@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
+import { DashboardPwaInstallBanner } from "@/components/dashboard-pwa-install-banner";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { MobilePageHeader } from "@/components/mobile-page-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default async function DashboardLayout({
   children,
@@ -13,16 +15,16 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="max-md:h-svh max-md:overflow-hidden">
       <AppSidebar username={session.username} />
-      <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="mx-2 h-5" />
-          <h1 className="text-sm font-medium text-muted-foreground">Credit Spend Analyser</h1>
-        </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+      <SidebarInset className="max-md:min-h-0 max-md:overflow-hidden">
+        <MobilePageHeader />
+        <div className="p-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px))] md:p-6 md:pb-6 max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:overscroll-y-contain">
+          <DashboardPwaInstallBanner />
+          {children}
+        </div>
       </SidebarInset>
+      <MobileBottomNav username={session.username} />
     </SidebarProvider>
   );
 }

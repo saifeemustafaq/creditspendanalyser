@@ -66,6 +66,108 @@ function duplicateBadge(tx: PreviewTransaction) {
   );
 }
 
+function UploadReviewRowCard({
+  originalIndex,
+  tx,
+  onChangeCategory,
+  readOnly = false,
+}: {
+  originalIndex: number;
+  tx: PreviewTransaction;
+  onChangeCategory: (index: number, category: Category) => void;
+  readOnly?: boolean;
+}) {
+  const description = tx.rawDescription.split(/\r?\n/)[0];
+  return (
+    <div className={cn("border-b px-4 py-3 last:border-b-0", readOnly && "opacity-60")}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">{tx.merchant}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{fmtDate(tx.transactionDate)}</p>
+          {description && description !== tx.merchant ? (
+            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        <p
+          className={cn(
+            "shrink-0 font-semibold tabular-nums",
+            tx.type !== "debit" && "text-muted-foreground",
+          )}
+        >
+          {tx.type === "debit" ? fmtCurrency(tx.amount) : `-${fmtCurrency(tx.amount)}`}
+        </p>
+      </div>
+      <div className="mt-2.5 space-y-2">
+        {readOnly ? (
+          <span className="text-xs">{tx.category}</span>
+        ) : (
+          <Select
+            value={tx.category}
+            onValueChange={(v) => v && onChangeCategory(originalIndex, v as Category)}
+          >
+            <SelectTrigger className="h-8 w-full text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((entry) => (
+                <SelectItem key={entry} value={entry}>
+                  {entry}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <div className="flex flex-wrap items-center gap-1">
+          <Badge variant={methodVariant(tx.categorizedBy)}>
+            {METHOD_LABEL[tx.categorizedBy]}
+          </Badge>
+          {duplicateBadge(tx)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TransactionRowsSection({
+  rows,
+  onChangeCategory,
+  readOnly = false,
+}: {
+  rows: IndexedRow[];
+  onChangeCategory: (index: number, category: Category) => void;
+  readOnly?: boolean;
+}) {
+  if (rows.length === 0) return null;
+
+  return (
+    <>
+      <div className="divide-y md:hidden">
+        {rows.map(({ originalIndex, tx }) => (
+          <UploadReviewRowCard
+            key={originalIndex}
+            originalIndex={originalIndex}
+            tx={tx}
+            onChangeCategory={onChangeCategory}
+            readOnly={readOnly}
+          />
+        ))}
+      </div>
+      <div className="hidden md:block">
+        <Table>
+          <TransactionTableHeader />
+          <TableBody>
+            <TransactionTableRows
+              rows={rows}
+              onChangeCategory={onChangeCategory}
+              readOnly={readOnly}
+            />
+          </TableBody>
+        </Table>
+      </div>
+    </>
+  );
+}
+
 function TransactionTableRows({
   rows,
   onChangeCategory,
@@ -325,15 +427,10 @@ export function UploadReviewTable({
         </CardHeader>
         {uncategorized.length > 0 && (
           <CardContent className="p-0">
-            <Table>
-              <TransactionTableHeader />
-              <TableBody>
-                <TransactionTableRows
-                  rows={uncategorized}
-                  onChangeCategory={onChangeCategory}
-                />
-              </TableBody>
-            </Table>
+            <TransactionRowsSection
+              rows={uncategorized}
+              onChangeCategory={onChangeCategory}
+            />
           </CardContent>
         )}
       </Card>
@@ -345,15 +442,10 @@ export function UploadReviewTable({
             Categorized ({categorized.length})
           </h3>
           <div className="rounded-md border">
-            <Table>
-              <TransactionTableHeader />
-              <TableBody>
-                <TransactionTableRows
-                  rows={categorized}
-                  onChangeCategory={onChangeCategory}
-                />
-              </TableBody>
-            </Table>
+            <TransactionRowsSection
+              rows={categorized}
+              onChangeCategory={onChangeCategory}
+            />
           </div>
         </div>
       )}
@@ -364,16 +456,11 @@ export function UploadReviewTable({
             Skipped duplicates ({dupTotal})
           </h3>
           <div className="rounded-md border">
-            <Table>
-              <TransactionTableHeader />
-              <TableBody>
-                <TransactionTableRows
-                  rows={duplicates}
-                  onChangeCategory={onChangeCategory}
-                  readOnly
-                />
-              </TableBody>
-            </Table>
+            <TransactionRowsSection
+              rows={duplicates}
+              onChangeCategory={onChangeCategory}
+              readOnly
+            />
           </div>
         </div>
       )}

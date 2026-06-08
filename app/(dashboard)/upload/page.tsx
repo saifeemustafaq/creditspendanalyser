@@ -70,7 +70,7 @@ export default function UploadPage() {
               }}
               onClick={() => !busy && inputRef.current?.click()}
               className={cn(
-                "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-10 text-center transition-colors",
+                "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-6 text-center transition-colors md:p-10",
                 dragOver ? "border-primary bg-primary/5" : "border-muted",
                 busy && "pointer-events-none opacity-60",
               )}
@@ -101,23 +101,46 @@ export default function UploadPage() {
 
       {/* Step 2: Review */}
       {step === "review" && preview && (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                Review transactions
-                <Badge variant="secondary">{CARD_LABELS[preview.cardType]}</Badge>
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {preview.duplicateSummary.newCount} new of {preview.transactions.length} parsed from{" "}
-                {preview.originalFilename}. Edit categories for new rows before saving — manual
-                changes are remembered for future uploads.
-              </p>
+        <>
+          <div className="space-y-6 pb-[calc(var(--bottom-nav-height)+6rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="min-w-0">
+                <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold">
+                  Review transactions
+                  <Badge variant="secondary">{CARD_LABELS[preview.cardType]}</Badge>
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {preview.duplicateSummary.newCount} new of {preview.transactions.length} parsed
+                  from {preview.originalFilename}. Edit categories for new rows before saving —
+                  manual changes are remembered for future uploads.
+                </p>
+              </div>
+              <div className="hidden shrink-0 items-center gap-2 md:flex">
+                <Button variant="ghost" size="sm" onClick={startOver} disabled={saving}>
+                  Cancel
+                </Button>
+                <Button onClick={saveTransactions} disabled={saving || uncategorizedCount > 0}>
+                  {saving && <Loader2 className="size-4 animate-spin" />}
+                  Save to database
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={startOver} disabled={saving}>
-                Cancel
-              </Button>
+
+            <UploadReviewTable
+              rows={preview.transactions}
+              onChangeCategory={changeCategory}
+              onAICategorize={runAICategorization}
+              aiLoading={aiBusy}
+              aiSummary={aiSummary}
+            />
+
+            <div className="hidden items-center justify-end gap-3 pt-2 md:flex">
+              {uncategorizedCount > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Resolve {uncategorizedCount} uncategorized{" "}
+                  {uncategorizedCount === 1 ? "transaction" : "transactions"} to enable save
+                </p>
+              )}
               <Button onClick={saveTransactions} disabled={saving || uncategorizedCount > 0}>
                 {saving && <Loader2 className="size-4 animate-spin" />}
                 Save to database
@@ -125,27 +148,35 @@ export default function UploadPage() {
             </div>
           </div>
 
-          <UploadReviewTable
-            rows={preview.transactions}
-            onChangeCategory={changeCategory}
-            onAICategorize={runAICategorization}
-            aiLoading={aiBusy}
-            aiSummary={aiSummary}
-          />
-
-          <div className="flex items-center justify-end gap-3 pt-2">
-            {uncategorizedCount > 0 && (
-              <p className="text-sm text-muted-foreground">
-                Resolve {uncategorizedCount} uncategorized{" "}
-                {uncategorizedCount === 1 ? "transaction" : "transactions"} to enable save
-              </p>
-            )}
-            <Button onClick={saveTransactions} disabled={saving || uncategorizedCount > 0}>
-              {saving && <Loader2 className="size-4 animate-spin" />}
-              Save to database
-            </Button>
+          <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px))] z-30 border-t bg-background/95 p-4 pb-safe backdrop-blur md:hidden">
+            <div className="mx-auto flex max-w-6xl flex-col gap-2">
+              {uncategorizedCount > 0 ? (
+                <p className="text-center text-xs text-muted-foreground">
+                  Resolve {uncategorizedCount} uncategorized{" "}
+                  {uncategorizedCount === 1 ? "transaction" : "transactions"} to enable save
+                </p>
+              ) : null}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="min-h-11 flex-1"
+                  onClick={startOver}
+                  disabled={saving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="min-h-11 flex-1"
+                  onClick={saveTransactions}
+                  disabled={saving || uncategorizedCount > 0}
+                >
+                  {saving && <Loader2 className="size-4 animate-spin" />}
+                  Save to database
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Step 3: Confirmation */}

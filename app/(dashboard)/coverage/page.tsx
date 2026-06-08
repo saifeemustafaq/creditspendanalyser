@@ -134,7 +134,7 @@ export default function CoveragePage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Coverage</h2>
           <p className="text-sm text-muted-foreground">
@@ -144,21 +144,23 @@ export default function CoveragePage() {
           </p>
         </div>
         {!loading && yearOptions.length > 0 && (
-          <Select
-            value={String(selectedYear)}
-            onValueChange={(v) => v && setSelectedYear(Number(v))}
-          >
-            <SelectTrigger className="w-[100px]" aria-label="Year">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {yearOptions.map((y) => (
-                <SelectItem key={y} value={String(y)}>
-                  {y}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="sticky top-0 z-10 -mx-4 border-b bg-background/95 px-4 py-2 backdrop-blur sm:static sm:mx-0 sm:border-b-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+            <Select
+              value={String(selectedYear)}
+              onValueChange={(v) => v && setSelectedYear(Number(v))}
+            >
+              <SelectTrigger className="w-full sm:w-[100px]" aria-label="Year">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {yearOptions.map((y) => (
+                  <SelectItem key={y} value={String(y)}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
       </div>
 
@@ -189,8 +191,8 @@ export default function CoveragePage() {
       {!loading && untrackedCards.length > 0 && (
         <div className="rounded-lg border p-4 space-y-3">
           <p className="text-sm font-medium">Track another card</p>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5">
+          <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
+            <div className="w-full space-y-1.5 md:w-auto">
               <Label htmlFor="add-card" className="text-xs text-muted-foreground">
                 Card
               </Label>
@@ -198,7 +200,7 @@ export default function CoveragePage() {
                 value={addCardType}
                 onValueChange={(v) => setAddCardType((v as CardType) ?? "")}
               >
-                <SelectTrigger id="add-card" className="w-[240px]">
+                <SelectTrigger id="add-card" className="w-full md:w-[240px]">
                   <SelectValue placeholder="Select a card" />
                 </SelectTrigger>
                 <SelectContent>
@@ -210,7 +212,7 @@ export default function CoveragePage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="w-full space-y-1.5 md:w-auto">
               <Label htmlFor="add-start" className="text-xs text-muted-foreground">
                 Opened on (optional)
               </Label>
@@ -219,10 +221,14 @@ export default function CoveragePage() {
                 type="date"
                 value={addStartDate}
                 onChange={(e) => setAddStartDate(e.target.value)}
-                className="w-[150px]"
+                className="w-full md:w-[150px]"
               />
             </div>
-            <Button onClick={trackCard} disabled={adding || !addCardType}>
+            <Button
+              onClick={trackCard}
+              disabled={adding || !addCardType}
+              className="w-full md:w-auto"
+            >
               <Plus className="size-4" />
               Track card
             </Button>

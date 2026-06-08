@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
+import { withSerwist } from "@serwist/turbopack";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["esbuild-wasm"],
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

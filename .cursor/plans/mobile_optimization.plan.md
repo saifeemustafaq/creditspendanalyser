@@ -4,25 +4,25 @@ overview: Make the Credit Spend Analyser usable on phones through incremental sp
 todos:
   - id: sprint-1-shell
     content: "Sprint 1 — Mobile shell foundation (viewport, safe areas, header, main scroll, toast position)"
-    status: pending
+    status: completed
   - id: sprint-2-nav
     content: "Sprint 2 — Bottom navigation + secondary nav sheet (primary routes always visible)"
-    status: pending
+    status: completed
   - id: sprint-3-filters
     content: "Sprint 3 — Shared mobile filter patterns (full-width controls, collapsible filter bar)"
-    status: pending
+    status: completed
   - id: sprint-4-tables
     content: "Sprint 4 — Table → card/list layouts for transactions, uploads, reports, upload review"
-    status: pending
+    status: completed
   - id: sprint-5-charts
     content: "Sprint 5 — Chart and dashboard grid mobile sizing"
-    status: pending
+    status: completed
   - id: sprint-6-pages
     content: "Sprint 6 — Coverage timeline, recurring, dialogs, and remaining page polish"
-    status: pending
+    status: completed
   - id: sprint-7-qa
     content: "Sprint 7 — Cross-device QA, touch targets, loading states, DEVELOPER_GUIDE update"
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -48,6 +48,38 @@ Deliver a phone-first experience without rewriting the app: thumb-reachable navi
 | **Toasts** | Sonner `position="top-right"` in [`app/layout.tsx`](app/layout.tsx) | Can overlap mobile header / notch |
 
 **Design principle:** Mobile adds layout; desktop stays the same. Prefer Tailwind responsive classes and small shared components over page-by-page one-offs.
+
+---
+
+## Hard rule: desktop parity
+
+Every sprint **must preserve full desktop functionality**. Mobile work is additive — it must not remove, relocate, or degrade features that desktop users rely on at viewports **`md` and above (≥768px)**.
+
+### Requirements (non-negotiable)
+
+1. **Breakpoint isolation** — Mobile-only UI uses `md:hidden` or equivalent. Desktop-only UI uses `hidden md:flex` / `hidden md:block` / `md:` prefixes. Never replace a desktop pattern with a mobile one without keeping the original at `md+`.
+2. **Feature parity** — Every action available on desktop before a sprint must remain available on desktop after it (same routes, filters, tables, dialogs, exports, edits, sign-out, etc.).
+3. **Behavior parity** — URL-driven state, API calls, auth, pagination, and form submission logic must not change for desktop flows. Responsive layout may change; business logic may not.
+4. **Verify before closing a sprint** — Manually smoke-test at **≥1280px width** (or your usual desktop size) every page touched in that sprint. Confirm sidebar, header, filters, tables, and primary CTAs behave as before.
+5. **No duplicate controls in the DOM** — When sharing filter UI between inline desktop and mobile sheet, avoid mounting both copies simultaneously (duplicate `id`s, double event handlers). Lazy-render sheet content when open, or use separate mobile/desktop branches.
+6. **Dialogs with dynamic text** — Any dialog, sheet, or alert that embeds user data (merchant names, filenames, etc.) must:
+   - Use `break-words` on description text
+   - Use full-width stacked footer buttons on mobile with `whitespace-normal` (override default button `whitespace-nowrap`)
+   - Split long button labels across lines instead of one unbreakable string
+   - Set `min-w-0` on `DialogContent` so flex/grid children can shrink within the viewport
+
+### Per-sprint desktop checklist (run at ≥1280px)
+
+| Sprint | Desktop must still work |
+|--------|---------------------------|
+| 1 | Sidebar collapse/expand, `SidebarTrigger`, scroll, toasts top-right, login page |
+| 2 | Full left sidebar with all 7 links, icon collapse, footer sign-out; **no** bottom nav visible |
+| 3 | Inline filter bars (not collapsed sheet), same URL params, Audit button on transactions, export on reports |
+| 4 | Full tables on `md+` (all columns); cards only below 768px; category edit, delete, pagination on desktop |
+| 5 | Charts at full desktop container width use original heights (280/260/320px); no clipped legends |
+| 6 | Coverage desktop timeline; upload save in header (not sticky bar); recurring table; dialogs with horizontal footers |
+
+Sprint 7 QA includes a formal desktop regression pass; until then, **each sprint owner runs the row above before marking the sprint complete**.
 
 ---
 
@@ -103,9 +135,9 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
 
 2. **Dashboard layout scroll model**
    - In [`app/(dashboard)/layout.tsx`](app/(dashboard)/layout.tsx):
-     - `SidebarInset`: `flex flex-col min-h-dvh`
-     - `main`: `flex-1 overflow-y-auto overscroll-y-contain` with `pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]` on mobile (padding reserved even before bottom nav lands).
-     - Reduce mobile horizontal padding: `p-4 md:p-6` (already partially there).
+     - **Mobile (`<md`):** `SidebarProvider` gets `h-svh overflow-hidden`; content area uses `flex-1 min-h-0 overflow-y-auto` (scroll inside the shell, above bottom nav).
+     - **Desktop (`md+`):** No inner scroll trap — page uses normal document/window scroll (preserves mouse wheel behavior).
+     - `main` content padding: `pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))]` on mobile only; `md:pb-6` on desktop.
 
 3. **Mobile-aware header**
    - Create `MobilePageHeader` (client): reads pathname → page title map; shows title centered or left-aligned; keeps `SidebarTrigger` as overflow menu on `md+` only OR keep trigger but hide redundant app name on mobile.
@@ -120,6 +152,7 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
 - [ ] Content not hidden behind iOS home indicator (padding visible)
 - [ ] Header shows contextual page title on viewports &lt; 768px
 - [ ] Login page still centers correctly
+- [ ] **Desktop (≥768px):** Sidebar trigger, app title in header, top-right toasts, and page scroll unchanged
 
 ### Files touched
 
@@ -165,6 +198,7 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
 - [ ] Recurring / Uploads / Reports / Coverage reachable via More in ≤2 taps
 - [ ] Active tab visually indicated
 - [ ] Desktop sidebar unchanged
+- [ ] **Desktop (≥768px):** No bottom nav; all 7 sidebar links + sign-out; collapsible icon mode works
 
 ### Files touched
 
@@ -203,6 +237,7 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
 - [ ] No filter control forces horizontal page scroll at 375px width
 - [ ] Custom date range usable on mobile (native date inputs full width)
 - [ ] Filter state still URL-driven (no regression)
+- [ ] **Desktop (≥768px):** Filters inline (not behind sheet); same controls and URL behavior as pre-Sprint 3
 
 ### Files touched
 
@@ -247,6 +282,7 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
 - [ ] Transactions usable at 320px width
 - [ ] Category edit still works on mobile
 - [ ] Pagination controls full width, min 44px tap targets
+- [ ] **Desktop (≥768px):** Full tables with all columns; category edit, delete, and pagination unchanged
 
 ### Files touched
 
@@ -282,6 +318,7 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
 - [ ] All four dashboard charts render without clipping at 375px
 - [ ] Tooltips tappable / readable on touch devices
 - [ ] No horizontal scroll introduced by charts
+- [ ] **Desktop (≥768px):** Chart heights, radii, and axis layout unchanged at full container width; tooltips show full merchant/card labels
 
 ### Files touched
 
@@ -309,7 +346,9 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
    - Step action buttons: sticky footer bar (`fixed bottom-[var(--bottom-nav-height)]`) for "Save" / "Run AI" during review step — avoids scrolling to find primary CTA
    - File input remains accessible (not just click-on-dropzone)
 
-4. **Dialogs** — audit, recurring override, add recurring
+4. **Dialogs** — audit, recurring override, add recurring, category apply, delete upload
+   - Follow **Hard rule §6** (dynamic text): `min-w-0` on content, `break-words` on descriptions, full-width wrapping footer buttons on mobile
+   - Footer buttons: `w-full whitespace-normal h-auto min-h-9` — never rely on default button `whitespace-nowrap` for dynamic labels
    - Mobile: `DialogContent` → near full-screen (`max-w-[calc(100%-1rem)] max-h-[90dvh]`) — partially exists
    - Footer buttons: full-width stacked (`flex-col-reverse gap-2`)
 
@@ -322,6 +361,7 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
 - [ ] Coverage timeline scrolls horizontally with visible affordance (fade edge)
 - [ ] Upload review "Save transactions" always reachable
 - [ ] Audit dialog usable without zoom
+- [ ] **Desktop (≥768px):** Coverage equal-width timeline; upload review inline actions; full recurring table; dialog footers horizontal
 
 ### Files touched
 
@@ -343,25 +383,31 @@ Keep [`components/app-sidebar.tsx`](components/app-sidebar.tsx) as the single so
    | iPhone 14 Pro (393 + notch) | Safe areas, toast, bottom nav |
    | Android Chrome (360) | Same |
    | iPad (768 boundary) | Sidebar appears, bottom nav hidden |
+   | **Desktop (≥1280)** | **Full regression — see Hard rule: desktop parity checklist (Sprints 1–6)** |
 
-2. **Touch targets**
+2. **Desktop regression pass (required)**
+   - Re-run every row in the per-sprint desktop checklist at ≥1280px
+   - Confirm no bottom nav, full sidebar, inline filters, full tables, all exports/edits work
+
+3. **Touch targets**
    - Audit interactive elements ≥ 44×44px (buttons, nav items, pagination)
    - Increase `SidebarMenuButton` / bottom nav hit areas if needed
 
-3. **Loading & error states**
+4. **Loading & error states**
    - Skeleton grids match mobile column counts ([`app/(dashboard)/loading.tsx`](app/(dashboard)/loading.tsx) and per-route loading files)
 
-4. **Performance**
+5. **Performance**
    - Avoid layout shift when `useIsMobile` hydrates (ShadCN sidebar already handles; bottom nav should mount with `md:hidden` CSS first, JS enhancement second)
 
-5. **DEVELOPER_GUIDE.md**
+6. **DEVELOPER_GUIDE.md**
    - New subsection: "Mobile layout conventions" — breakpoint, bottom nav, filter sheet, table/card pattern, when to use `useIsMobile` vs Tailwind-only
 
 ### Acceptance criteria
 
-- [ ] Test matrix completed with no P0 layout bugs
-- [ ] DEVELOPER_GUIDE updated
-- [ ] No new ESLint/TS errors
+- [x] Test matrix completed with no P0 layout bugs (mobile **and** desktop ≥1280px)
+- [x] Desktop regression checklist (Sprints 1–6) passed
+- [x] DEVELOPER_GUIDE updated
+- [x] No new ESLint/TS errors
 
 ---
 
