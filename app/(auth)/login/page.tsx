@@ -25,7 +25,17 @@ function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      const data = await res.json();
+      let data: { error?: string; username?: string };
+      try {
+        data = await res.json();
+      } catch {
+        toast.error(
+          res.ok
+            ? "Login failed: server returned an invalid response."
+            : `Login failed (${res.status}). Check that Netlify env vars are set and function logs for errors.`,
+        );
+        return;
+      }
       if (!res.ok) {
         toast.error(data.error ?? "Login failed");
         return;
