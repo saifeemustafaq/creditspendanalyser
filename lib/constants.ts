@@ -9,6 +9,8 @@ export const BCRYPT_SALT_ROUNDS = 10;
 export const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 7; // 7 days
 export const LOGIN_LOG_MAX_ENTRIES = 100;
 export const LOGIN_RESPONSE_PREVIEW_CHARS = 500;
+/** Fail fast on Netlify (10s function limit) instead of hanging until 502. */
+export const MONGODB_CONNECT_TIMEOUT_MS = 8_000;
 
 /** Stages the login page may report via POST /api/auth/log. */
 export const CLIENT_LOGIN_FAILURE_STAGES = [

@@ -1,3 +1,4 @@
+import { MONGODB_CONNECT_TIMEOUT_MS } from "@/lib/constants";
 import { MongoClient, type Db } from "mongodb";
 
 declare global {
@@ -10,7 +11,11 @@ function getClientPromise(): Promise<MongoClient> {
     throw new Error("MONGODB_URI is not set. Add it to .env.local.");
   }
   if (!global.__mongoClientPromise) {
-    const client = new MongoClient(uri);
+    const client = new MongoClient(uri, {
+      serverSelectionTimeoutMS: MONGODB_CONNECT_TIMEOUT_MS,
+      connectTimeoutMS: MONGODB_CONNECT_TIMEOUT_MS,
+      maxIdleTimeMS: 30_000,
+    });
     global.__mongoClientPromise = client.connect();
   }
   return global.__mongoClientPromise;
