@@ -28,6 +28,7 @@ export const COLLECTIONS = {
   categoryOverrides: "category_overrides",
   recurringOverrides: "recurring_overrides",
   cardSettings: "card_settings",
+  loginAttemptLogs: "login_attempt_logs",
 } as const;
 
 /** Sparse unique index: one stored row per dedupeKey per user (legacy rows omit dedupeKey). */

@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoginErrorPanel, type LoginDiagnosticPayload } from "@/components/login-error-panel";
 import { LoginPwaInstallHint } from "@/components/login-pwa-install-hint";
+import {
+  parseAuthErrorResponse,
+  reportClientLoginFailure,
+} from "@/components/login-response-parser";
+import { LOGIN_RESPONSE_PREVIEW_CHARS } from "@/lib/constants";
 
 function LoginForm() {
   const router = useRouter();
@@ -15,69 +21,105 @@ function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [diagnostic, setDiagnostic] = useState<LoginDiagnosticPayload | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
+    setDiagnostic(null);
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      let data: { error?: string; username?: string };
+
+      const responseText = await res.text();
+      let parsed: ReturnType<typeof parseAuthErrorResponse>;
       try {
-        data = await res.json();
-      } catch {
-        toast.error(
-          res.ok
+        parsed = parseAuthErrorResponse(JSON.parse(responseText));
+      } catch (err) {
+        console.error("LoginForm: auth response JSON parse failed:", err);
+        parsed = null;
+      }
+
+      if (!parsed) {
+        const preview = responseText.slice(0, LOGIN_RESPONSE_PREVIEW_CHARS);
+        const payload = await reportClientLoginFailure({
+          attemptedUsername: username,
+          stage: "client_parse_error",
+          message: res.ok
             ? "Login failed: server returned an invalid response."
-            : `Login failed (${res.status}). Check that Netlify env vars are set and function logs for errors.`,
-        );
+            : `Login failed (${res.status}): server returned non-JSON.`,
+          detail: preview || "Empty response body",
+          httpStatus: res.status,
+        });
+        setDiagnostic({ ...payload, responseBodyPreview: preview });
+        toast.error(payload.error);
         return;
       }
+
       if (!res.ok) {
-        toast.error(data.error ?? "Login failed");
+        setDiagnostic({
+          error: parsed.error ?? "Login failed",
+          code: parsed.code,
+          logId: parsed.logId ?? null,
+          detail: parsed.detail,
+          httpStatus: res.status,
+        });
+        toast.error(parsed.error ?? "Login failed");
         return;
       }
-      toast.success(`Welcome, ${data.username}`);
+
+      toast.success(`Welcome, ${parsed.username}`);
       const next = params.get("from") ?? "/";
       router.push(next);
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Login failed");
+      const message = err instanceof Error ? err.message : "Login failed";
+      const payload = await reportClientLoginFailure({
+        attemptedUsername: username,
+        stage: "client_network_error",
+        message,
+        detail: err instanceof Error ? err.stack : undefined,
+      });
+      setDiagnostic(payload);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
-        <Input
-          id="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          autoComplete="username"
-          required
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-          required
-        />
-      </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? "Signing in…" : "Sign in"}
-      </Button>
-    </form>
+    <>
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="username">Username</Label>
+          <Input
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+        </div>
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+      {diagnostic && <LoginErrorPanel payload={diagnostic} />}
+    </>
   );
 }
 

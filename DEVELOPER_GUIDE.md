@@ -59,8 +59,15 @@ creditspendanalyser/
 │   │       ├── page.tsx                # Statement date coverage map (per-card month blocks)
 │   │       ├── loading.tsx             # Coverage page skeleton
 │   │       └── error.tsx               # Coverage page error boundary
+│   │   └── logs/
+│   │       ├── page.tsx                # Login failure log viewer
+│   │       ├── loading.tsx             # Logs page skeleton
+│   │       └── error.tsx               # Logs page error boundary
 │   ├── api/
-│   │   ├── auth/route.ts               # Login / logout / session check
+│   │   ├── auth/
+│   │   │   ├── route.ts                # Login / logout / session check
+│   │   │   └── log/route.ts            # Client-reported login failure logging
+│   │   ├── logs/login/route.ts         # GET recent login failure logs (authenticated)
 │   │   ├── coverage/route.ts           # GET statement date coverage per card
 │   │   ├── coverage/settings/route.ts  # PATCH card open date / track card
 │   │   ├── upload/
@@ -108,7 +115,11 @@ creditspendanalyser/
 │   ├── mobile-filter-bar.tsx            # Collapsible filter sheet on mobile, inline on desktop
 │   ├── mobile-page-header.tsx           # Dashboard header with contextual mobile page title + sign out
 │   ├── mobile-toaster.tsx               # Responsive Sonner placement (mobile vs desktop)
+│   ├── copy-text-button.tsx             # Clipboard copy button with toast feedback
+│   ├── login-error-panel.tsx            # Copyable login failure diagnostics panel
+│   ├── login-logs-table.tsx             # Login failure log table + detail dialog
 │   ├── login-pwa-install-hint.tsx       # Compact install hint on login (mobile)
+│   ├── login-response-parser.ts         # Runtime parsers for auth/login-log API responses
 │   ├── dashboard-pwa-install-banner.tsx # Mobile-only install banner wrapper for dashboard
 │   ├── offline-banner.tsx               # Fixed in-app offline indicator
 │   ├── pwa-install-banner.tsx           # Dismissible PWA install banner (Chromium + iOS)
@@ -163,6 +174,7 @@ creditspendanalyser/
 │   │   ├── extraction-pipeline.ts       # parseAndPreview() + confirmAndSave()
 │   │   ├── transaction-dedupe.ts        # dedupeKey + overlap detection for uploads
 │   │   ├── transaction-dedupe.test.ts   # Unit tests for deduplication logic
+│   │   ├── login-diagnostics.ts         # Login failure env checks, logging, error responses
 │   │   ├── recurring-detector.ts        # Pure recurring detection (clustering + scoring + alerts)
 │   │   └── issuer-adapters/             # Per-issuer StructuredRow → ExtractedTransaction
 │   │       ├── types.ts                 # RowAdapter type
@@ -178,6 +190,7 @@ creditspendanalyser/
 │       ├── coverage.ts                  # Statement date coverage aggregation per card
 │       ├── card-settings.ts             # Per-card open date for coverage tracking
 │       ├── category-overrides.ts        # Persisted user category corrections
+│       ├── login-logs.ts                  # Login failure attempt log insert + list
 │       └── recurring.ts                 # Recurring detection + override CRUD
 ├── types/
 │   └── index.ts                         # Shared TypeScript types
@@ -373,6 +386,7 @@ The app uses **MongoDB** via the native Node.js driver (not Mongoose).
 | `category_overrides` | Persisted merchant → category corrections (re-applied on future uploads) |
 | `recurring_overrides` | User decisions for recurring detection (include / dismiss / frequency_override) |
 | `card_settings` | Per-card open date for coverage tracking (excludes pre-open periods from missing-date alerts) |
+| `login_attempt_logs` | Failed login diagnostics (stage, message, env checks; no passwords) |
 
 ### Collection access pattern
 
