@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { clearSessionCookie, getSession, setSessionCookie } from "@/lib/auth";
 import { findUserByUsername, validatePassword } from "@/lib/models/users";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
     let body: { username?: string; password?: string };
