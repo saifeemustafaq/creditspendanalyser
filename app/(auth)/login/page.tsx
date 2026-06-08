@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoginPwaInstallHint } from "@/components/login-pwa-install-hint";
 
 function LoginForm() {
   const router = useRouter();
@@ -72,7 +73,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+    <div className="flex min-h-dvh items-center justify-center bg-muted/30 p-4 pt-safe pb-safe">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Credit Spend Analyser</CardTitle>
@@ -82,6 +83,7 @@ export default function LoginPage() {
           <Suspense fallback={<div className="text-sm text-muted-foreground">Loading…</div>}>
             <LoginForm />
           </Suspense>
+          <LoginPwaInstallHint />
         </CardContent>
       </Card>
     </div>

@@ -1,16 +1,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyToken, SESSION_COOKIE } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/~offline"];
+
+const PWA_PUBLIC_PREFIXES = ["/serwist/", "/icons/", "/apple-startup/"];
+
+function isPublicRequest(pathname: string): boolean {
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return true;
+  }
+  if (PWA_PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return true;
+  }
+  if (pathname === "/manifest.webmanifest") {
+    return true;
+  }
+  if (pathname.startsWith("/api/auth")) {
+    return true;
+  }
+  return false;
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Public paths and auth endpoint pass through.
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    return NextResponse.next();
-  }
-  if (pathname.startsWith("/api/auth")) {
+  if (isPublicRequest(pathname)) {
     return NextResponse.next();
   }
 
@@ -32,7 +46,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on everything except static assets and the Next internals.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
+    // Run on everything except static assets, PWA assets, and Next internals.
+    "/((?!_next/static|_next/image|favicon.ico|serwist|icons|apple-startup|manifest.webmanifest|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
   ],
 };

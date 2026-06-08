@@ -21,6 +21,15 @@ export const CARD_LABELS: Record<CardType, string> = {
 
 export const CARD_TYPES = Object.keys(CARD_LABELS) as CardType[];
 
+export interface CardSettingsDoc {
+  _id: ObjectId;
+  userId: ObjectId;
+  cardType: CardType;
+  /** First day the card existed — dates before this are not flagged as missing. */
+  startDate?: Date | null;
+  updatedAt: Date;
+}
+
 export const CATEGORIES = [
   "Groceries",
   "Dining",

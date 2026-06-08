@@ -21,6 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { TransactionType } from "@/types";
+import {
+  mobileDialogContentClass,
+  mobileDialogDescriptionClass,
+  mobileDialogFooterClass,
+} from "@/lib/mobile-dialog";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -77,10 +83,10 @@ export function RecurringAddDialog({ open, onOpenChange, onSaved }: Props) {
         }
       }}
     >
-      <DialogContent>
+      <DialogContent className={cn(mobileDialogContentClass, "sm:max-w-lg")}>
         <DialogHeader>
           <DialogTitle>Add recurring item</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className={mobileDialogDescriptionClass}>
             Mark a merchant as recurring even if it hasn&apos;t shown a clear pattern yet.
             The detector will start tracking it once ≥2 occurrences are present.
           </DialogDescription>
@@ -110,7 +116,7 @@ export function RecurringAddDialog({ open, onOpenChange, onSaved }: Props) {
             </Select>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className={mobileDialogFooterClass}>
           <Button
             variant="outline"
             onClick={() => {

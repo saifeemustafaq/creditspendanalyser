@@ -12,6 +12,7 @@ import { CATEGORY_COLORS, SUMMARY_ACCENT } from "@/lib/constants";
 import { fmtCurrency, fmtDate } from "@/lib/format";
 import { CategoryBadge } from "@/components/category-badge";
 import { DashboardFilters } from "@/components/dashboard-filters";
+import { TransactionRowCard } from "@/components/transaction-row-card";
 import {
   CardComparisonChart,
   CategoryChart,
@@ -76,7 +77,7 @@ export default async function DashboardPage({
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Dashboard</h2>
           <p className="text-sm text-muted-foreground">
@@ -178,33 +179,33 @@ export default async function DashboardPage({
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Spending by category</CardTitle>
+                <CardTitle className="text-base md:text-lg">Spending by category</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="min-w-0">
                 <CategoryChart data={insights.byCategory} />
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Monthly trend</CardTitle>
+                <CardTitle className="text-base md:text-lg">Monthly trend</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="min-w-0">
                 <MonthlyTrendChart data={insights.monthlyTrend} />
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Spend by card</CardTitle>
+                <CardTitle className="text-base md:text-lg">Spend by card</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="min-w-0">
                 <CardComparisonChart data={insights.byCard} />
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Top merchants</CardTitle>
+                <CardTitle className="text-base md:text-lg">Top merchants</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="min-w-0">
                 <TopMerchantsChart data={insights.topMerchants} />
               </CardContent>
             </Card>
@@ -214,36 +215,51 @@ export default async function DashboardPage({
             <CardHeader>
               <CardTitle>Recent transactions</CardTitle>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Merchant</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Card</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {insights.recent.map((tx) => (
-                    <TableRow key={tx._id.toString()}>
-                      <TableCell>{fmtDate(tx.transactionDate)}</TableCell>
-                      <TableCell className="font-medium">{tx.merchant}</TableCell>
-                      <TableCell>
-                        <CategoryBadge category={tx.category} />
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {CARD_LABELS[tx.cardType]}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {tx.type !== "debit" && "−"}
-                        {fmtCurrency(tx.amount)}
-                      </TableCell>
+            <CardContent className="p-0 md:p-6">
+              <div className="divide-y md:hidden">
+                {insights.recent.map((tx) => (
+                  <TransactionRowCard
+                    key={tx._id.toString()}
+                    merchant={tx.merchant}
+                    transactionDate={tx.transactionDate}
+                    category={tx.category}
+                    cardType={tx.cardType}
+                    amount={tx.amount}
+                    type={tx.type}
+                  />
+                ))}
+              </div>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Merchant</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Card</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {insights.recent.map((tx) => (
+                      <TableRow key={tx._id.toString()}>
+                        <TableCell>{fmtDate(tx.transactionDate)}</TableCell>
+                        <TableCell className="font-medium">{tx.merchant}</TableCell>
+                        <TableCell>
+                          <CategoryBadge category={tx.category} />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {CARD_LABELS[tx.cardType]}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {tx.type !== "debit" && "−"}
+                          {fmtCurrency(tx.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </>
@@ -285,7 +301,7 @@ function SummaryCard({
       <CardContent>
         <div
           className={cn(
-            "text-2xl font-semibold tabular-nums",
+            "text-2xl font-semibold tabular-nums break-words leading-tight",
             tone === "good" && "text-emerald-600",
             tone === "warn" && "text-amber-600",
           )}
