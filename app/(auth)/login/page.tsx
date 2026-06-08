@@ -60,6 +60,30 @@ function LoginForm() {
       }
 
       if (!res.ok) {
+        const isGatewayError = res.status === 502 || res.status === 503 || res.status === 504;
+        if (isGatewayError && !parsed.detail) {
+          const preview = responseText.slice(0, LOGIN_RESPONSE_PREVIEW_CHARS);
+          const payload = await reportClientLoginFailure({
+            attemptedUsername: username,
+            stage: "client_parse_error",
+            message: `Netlify function failed (${res.status})`,
+            detail: [
+              "The /api/auth serverless function crashed or timed out before returning JSON.",
+              "Common causes:",
+              "- MONGODB_URI missing or wrong in Netlify environment variables",
+              "- MongoDB Atlas Network Access blocking Netlify (add 0.0.0.0/0)",
+              "- AUTH_SECRET missing in Netlify environment variables",
+              "- MongoDB driver bundling issue (redeploy after latest netlify.toml fix)",
+              `Open ${window.location.origin}/api/auth/health to test env + MongoDB connectivity.`,
+              `Response preview: ${preview || "(empty)"}`,
+            ].join("\n"),
+            httpStatus: res.status,
+          });
+          setDiagnostic({ ...payload, responseBodyPreview: preview });
+          toast.error(payload.error);
+          return;
+        }
+
         setDiagnostic({
           error: parsed.error ?? "Login failed",
           code: parsed.code,
