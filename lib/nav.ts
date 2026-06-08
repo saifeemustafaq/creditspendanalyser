@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   ListOrdered,
   Repeat,
+  ScrollText,
   Upload,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/recurring", label: "Recurring", icon: Repeat },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/coverage", label: "Coverage", icon: CalendarRange },
+  { href: "/logs", label: "Logs", icon: ScrollText },
 ];
 
 export function getPageTitle(pathname: string): string {

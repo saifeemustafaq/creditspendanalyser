@@ -1,4 +1,4 @@
-import type { CardType, Category, FileFormat, RecurringFrequency } from "@/types";
+import type { CardType, Category, FileFormat, LoginFailureStage, RecurringFrequency } from "@/types";
 
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB
 export const MOBILE_BREAKPOINT = 768;
@@ -7,6 +7,14 @@ export const TRANSACTIONS_MAX_LIMIT = 200;
 export const EXPORT_MAX_ROWS = 10_000;
 export const BCRYPT_SALT_ROUNDS = 10;
 export const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 7; // 7 days
+export const LOGIN_LOG_MAX_ENTRIES = 100;
+export const LOGIN_RESPONSE_PREVIEW_CHARS = 500;
+
+/** Stages the login page may report via POST /api/auth/log. */
+export const CLIENT_LOGIN_FAILURE_STAGES = [
+  "client_parse_error",
+  "client_network_error",
+] as const satisfies readonly LoginFailureStage[];
 export const EXTRACTION_TEXT_LIMIT = 60_000;
 export const CARD_DETECTION_TEXT_LIMIT = 8_000;
 export const AI_CATEGORIZE_BATCH_SIZE = 50;

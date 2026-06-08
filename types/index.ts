@@ -83,6 +83,43 @@ export interface UserDoc {
   createdAt: Date;
 }
 
+export type LoginFailureStage =
+  | "invalid_json"
+  | "missing_credentials"
+  | "user_not_found"
+  | "invalid_password"
+  | "session_error"
+  | "database_error"
+  | "config_error"
+  | "client_parse_error"
+  | "client_network_error"
+  | "unexpected";
+
+export interface LoginAttemptLogDoc {
+  _id: ObjectId;
+  logId: string;
+  attemptedUsername: string;
+  stage: LoginFailureStage;
+  message: string;
+  detail?: string;
+  httpStatus: number;
+  source: "server" | "client";
+  userAgent?: string;
+  host?: string;
+  envChecks?: {
+    hasMongoUri: boolean;
+    hasAuthSecret: boolean;
+    nodeEnv: string;
+  };
+  createdAt: Date;
+}
+
+/** Serialized login log row returned by GET /api/logs/login. */
+export type LoginAttemptLogApiRow = Omit<LoginAttemptLogDoc, "_id" | "createdAt"> & {
+  _id: string;
+  createdAt: string;
+};
+
 export interface UploadStats {
   rowsParsed: number;
   rowsSaved: number;
