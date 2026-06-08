@@ -21,6 +21,7 @@ import { CARD_LABELS, CATEGORIES, type CardType } from "@/types";
 import { fmtCurrency, fmtDate } from "@/lib/format";
 import { Download } from "lucide-react";
 import { MobileFilterBar } from "@/components/mobile-filter-bar";
+import { mobileFilterTriggerClass } from "@/lib/mobile-filter-sheet";
 import { TableScrollRegion } from "@/components/table-scroll-region";
 
 interface Statement {
@@ -199,6 +200,68 @@ export default function ReportsPage() {
                     onValueChange={(v) => updateFilter("category", v ?? "all")}
                   >
                     <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      {CATEGORIES.map((entry) => (
+                        <SelectItem key={entry} value={entry}>
+                          {entry}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+            renderMobileFilters={() => (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-start">Start date</Label>
+                  <Input
+                    id="mobile-start"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => updateFilter("startDate", e.target.value)}
+                    className={mobileFilterTriggerClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mobile-end">End date</Label>
+                  <Input
+                    id="mobile-end"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => updateFilter("endDate", e.target.value)}
+                    className={mobileFilterTriggerClass}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Card</Label>
+                  <Select
+                    value={cardType}
+                    onValueChange={(v) => updateFilter("cardType", v ?? "all")}
+                  >
+                    <SelectTrigger className={mobileFilterTriggerClass}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All cards</SelectItem>
+                      {Object.entries(CARD_LABELS).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Select
+                    value={category}
+                    onValueChange={(v) => updateFilter("category", v ?? "all")}
+                  >
+                    <SelectTrigger className={mobileFilterTriggerClass}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

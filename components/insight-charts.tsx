@@ -58,8 +58,25 @@ function condenseCategoryRows(rows: PieRow[], isCompact: boolean): PieRow[] {
   ];
 }
 
+function CategoryLegend({ rows, className }: { rows: PieRow[]; className?: string }) {
+  return (
+    <ul className={cn("grid grid-cols-2 gap-x-3 gap-y-2.5", className)}>
+      {rows.map((row) => (
+        <li key={row.name} className="flex min-w-0 items-center gap-2 text-xs">
+          <span
+            className="size-2.5 shrink-0 rounded-[2px]"
+            style={{ backgroundColor: row.fill }}
+            aria-hidden
+          />
+          <span className="truncate text-muted-foreground">{row.name}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function CategoryChart({ data }: { data: Array<{ _id: string; total: number }> }) {
-  const { ref, isCompact } = useContainerWidth();
+  const { ref, isCompact, isNarrow } = useContainerWidth();
 
   const allRows: PieRow[] = data.map((entry, index) => ({
     name: entry._id,
@@ -71,13 +88,54 @@ export function CategoryChart({ data }: { data: Array<{ _id: string; total: numb
     rows.map((row) => [row.name, { label: row.name, color: row.fill }]),
   ) as ChartConfig;
 
+  const useExternalLegend = isNarrow;
+
+  if (useExternalLegend) {
+    return (
+      <div ref={ref} className="w-full min-w-0">
+        <ChartContainer
+          config={config}
+          className="mx-auto aspect-auto h-[200px] w-full [&_.recharts-wrapper]:mx-auto"
+        >
+          <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value, name) => [`${fmtCurrency(Number(value))} `, String(name)]}
+                  hideLabel
+                />
+              }
+            />
+            <Pie
+              data={rows}
+              dataKey="total"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={50}
+              outerRadius={78}
+            >
+              {rows.map((row) => (
+                <Cell key={row.name} fill={row.fill} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ChartContainer>
+        <CategoryLegend rows={rows} className="mt-3 px-1" />
+      </div>
+    );
+  }
+
+  const innerRadius = isCompact ? 54 : 60;
+  const outerRadius = isCompact ? 86 : 96;
+
   return (
     <div ref={ref} className="w-full min-w-0">
       <ChartContainer
         config={config}
-        className="mx-auto aspect-square max-h-[240px] w-full md:max-h-[280px]"
+        className="mx-auto aspect-auto h-[280px] w-full md:h-[300px] [&_.recharts-wrapper]:mx-auto"
       >
-        <PieChart>
+        <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
           <ChartTooltip
             content={
               <ChartTooltipContent
@@ -90,8 +148,10 @@ export function CategoryChart({ data }: { data: Array<{ _id: string; total: numb
             data={rows}
             dataKey="total"
             nameKey="name"
-            innerRadius={isCompact ? 48 : 60}
-            outerRadius={isCompact ? 78 : 100}
+            cx="50%"
+            cy="48%"
+            innerRadius={innerRadius}
+            outerRadius={outerRadius}
           >
             {rows.map((row) => (
               <Cell key={row.name} fill={row.fill} />
@@ -101,10 +161,7 @@ export function CategoryChart({ data }: { data: Array<{ _id: string; total: numb
             content={
               <ChartLegendContent
                 nameKey="name"
-                className={cn(
-                  "gap-3",
-                  isCompact ? "flex-col items-start" : "flex-row flex-wrap items-center justify-center",
-                )}
+                className="flex-row flex-wrap items-center justify-center gap-3"
               />
             }
           />

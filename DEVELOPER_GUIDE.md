@@ -104,10 +104,9 @@ creditspendanalyser/
 │   ├── category-badge.tsx               # Tinted category label using CATEGORY_COLORS
 │   ├── dashboard-filters.tsx            # Date range + card type filter bar
 │   ├── insight-charts.tsx               # Dashboard chart components
-│   ├── mobile-bottom-nav.tsx            # Fixed bottom tab bar for mobile primary routes
+│   ├── mobile-bottom-nav.tsx            # Horizontally scrollable bottom tab bar (all routes)
 │   ├── mobile-filter-bar.tsx            # Collapsible filter sheet on mobile, inline on desktop
-│   ├── mobile-more-sheet.tsx            # Secondary routes + sign out (mobile More tab)
-│   ├── mobile-page-header.tsx           # Dashboard header with contextual mobile page title
+│   ├── mobile-page-header.tsx           # Dashboard header with contextual mobile page title + sign out
 │   ├── mobile-toaster.tsx               # Responsive Sonner placement (mobile vs desktop)
 │   ├── login-pwa-install-hint.tsx       # Compact install hint on login (mobile)
 │   ├── dashboard-pwa-install-banner.tsx # Mobile-only install banner wrapper for dashboard
@@ -524,7 +523,7 @@ Mobile work is **additive** — desktop behavior at `md` (768px) and above must 
 |---------|--------------|
 | **Breakpoint** | `MOBILE_BREAKPOINT = 768` in `lib/constants.ts`. Tailwind: `md:` = desktop. Prefer **`md:hidden` / `hidden md:block`** over JS when possible. |
 | **Shell** | `(dashboard)/layout.tsx`: mobile inner scroll + bottom nav padding; **desktop uses document scroll** (`max-md:` scroll trap only). |
-| **Navigation** | `MobileBottomNav` + `MobileMoreSheet` (`md:hidden`). Desktop: `AppSidebar` only. Nav config: `lib/nav.ts`. |
+| **Navigation** | `MobileBottomNav` — horizontally scrollable all routes (`md:hidden`). Sign out in `MobilePageHeader`. Desktop: `AppSidebar` only. Nav config: `lib/nav.ts`. |
 | **Header** | `MobilePageHeader`: page title on mobile, app name + `SidebarTrigger` on desktop. |
 | **Filters** | `MobileFilterBar`: inline `hidden md:flex` on desktop; bottom sheet on mobile. Lazy-render sheet content when open. |
 | **Tables** | Interactive lists → card component (`TransactionRowCard`, etc.) with `md:hidden`; table with `hidden md:block`. Read-only wide tables → `TableScrollRegion`. |

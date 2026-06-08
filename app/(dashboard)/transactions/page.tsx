@@ -29,6 +29,8 @@ import { fmtCurrency, fmtDate } from "@/lib/format";
 import { ShieldCheck } from "lucide-react";
 import { AuditDialog } from "@/components/audit-dialog";
 import { MobileFilterBar } from "@/components/mobile-filter-bar";
+import { MobileFilterField } from "@/components/mobile-filter-field";
+import { mobileFilterTriggerClass } from "@/lib/mobile-filter-sheet";
 import { TransactionRowCard } from "@/components/transaction-row-card";
 import {
   mobileDialogContentClass,
@@ -318,6 +320,77 @@ function TransactionsView() {
     );
   }
 
+  function renderMobileTransactionFilters() {
+    return (
+      <>
+        <MobileFilterField label="Card">
+          <Select
+            value={cardType}
+            onValueChange={(v) => setParam("cardType", v ?? "all", { resetPage: true })}
+          >
+            <SelectTrigger className={mobileFilterTriggerClass}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All cards</SelectItem>
+              {Object.entries(CARD_LABELS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </MobileFilterField>
+        <MobileFilterField label="Category">
+          <Select
+            value={category}
+            onValueChange={(v) => setParam("category", v ?? "all", { resetPage: true })}
+          >
+            <SelectTrigger className={mobileFilterTriggerClass}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {CATEGORIES.map((entry) => (
+                <SelectItem key={entry} value={entry}>
+                  {entry}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </MobileFilterField>
+        <MobileFilterField label="Date range">
+          <div className="flex flex-col gap-2">
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setParam("startDate", e.target.value || null, { resetPage: true })}
+              className={mobileFilterTriggerClass}
+              aria-label="Start date"
+            />
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setParam("endDate", e.target.value || null, { resetPage: true })}
+              className={mobileFilterTriggerClass}
+              aria-label="End date"
+            />
+            {startDate || endDate ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearDates}
+                className="h-9 w-full px-3 text-muted-foreground"
+              >
+                Clear dates
+              </Button>
+            ) : null}
+          </div>
+        </MobileFilterField>
+      </>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div>
@@ -360,6 +433,7 @@ function TransactionsView() {
               </Button>
             }
             renderFilters={renderTransactionFilters}
+            renderMobileFilters={renderMobileTransactionFilters}
           />
         </CardContent>
       </Card>

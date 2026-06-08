@@ -18,13 +18,13 @@ export default async function DashboardLayout({
     <SidebarProvider className="max-md:h-svh max-md:overflow-hidden">
       <AppSidebar username={session.username} />
       <SidebarInset className="max-md:min-h-0 max-md:overflow-hidden">
-        <MobilePageHeader />
+        <MobilePageHeader username={session.username} />
         <div className="p-4 pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom,0px))] md:p-6 md:pb-6 max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto max-md:overscroll-y-contain">
           <DashboardPwaInstallBanner />
           {children}
         </div>
       </SidebarInset>
-      <MobileBottomNav username={session.username} />
+      <MobileBottomNav />
     </SidebarProvider>
   );
 }

@@ -8,9 +8,17 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  mobileFilterSheetBodyClass,
+  mobileFilterSheetContentClass,
+  mobileFilterSheetFooterClass,
+  mobileFilterSheetOverlayClass,
+  mobileFilterTriggerClass,
+} from "@/lib/mobile-filter-sheet";
 import { cn } from "@/lib/utils";
 
 type MobileFilterBarProps = {
@@ -19,6 +27,7 @@ type MobileFilterBarProps = {
   footer?: React.ReactNode;
   desktopClassName?: string;
   renderFilters: () => React.ReactNode;
+  renderMobileFilters?: () => React.ReactNode;
 };
 
 export function MobileFilterBar({
@@ -27,6 +36,7 @@ export function MobileFilterBar({
   footer,
   desktopClassName,
   renderFilters,
+  renderMobileFilters,
 }: MobileFilterBarProps) {
   const [open, setOpen] = useState(false);
 
@@ -56,15 +66,33 @@ export function MobileFilterBar({
       </div>
 
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="pb-safe max-h-[85dvh] md:hidden">
-          <SheetHeader>
-            <SheetTitle>Filters</SheetTitle>
+        <SheetContent
+          side="bottom"
+          overlayClassName={mobileFilterSheetOverlayClass}
+          className={cn(mobileFilterSheetContentClass, "max-h-[85dvh]")}
+        >
+          <div className="flex justify-center pt-3 pb-1" aria-hidden>
+            <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
+          </div>
+          <SheetHeader className="space-y-1 border-b px-4 pb-4 pt-0 text-left">
+            <SheetTitle className="text-lg">Filters</SheetTitle>
             <SheetDescription>Adjust what data is shown</SheetDescription>
           </SheetHeader>
           {open ? (
             <>
-              <div className="flex flex-col gap-3 px-4">{renderFilters()}</div>
-              {footer ? <div className="flex flex-col gap-2 px-4 pb-2">{footer}</div> : null}
+              <div className={mobileFilterSheetBodyClass}>
+                {renderMobileFilters ? renderMobileFilters() : renderFilters()}
+              </div>
+              <SheetFooter className={cn(mobileFilterSheetFooterClass, "gap-3")}>
+                {footer}
+                <Button
+                  type="button"
+                  className={mobileFilterTriggerClass}
+                  onClick={() => setOpen(false)}
+                >
+                  Done
+                </Button>
+              </SheetFooter>
             </>
           ) : null}
         </SheetContent>

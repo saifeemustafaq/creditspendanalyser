@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { MobileFilterBar } from "@/components/mobile-filter-bar";
+import { MobileFilterField } from "@/components/mobile-filter-field";
+import { mobileFilterTriggerClass } from "@/lib/mobile-filter-sheet";
 import { CARD_LABELS } from "@/types";
 
 const RANGES = [
@@ -118,6 +120,64 @@ export function DashboardFilters({ pushTo = "/" }: DashboardFiltersProps) {
     );
   }
 
+  function renderMobileFilters() {
+    return (
+      <>
+        <MobileFilterField label="Date range">
+          <Select value={range} onValueChange={(v) => v && update({ range: v })}>
+            <SelectTrigger className={mobileFilterTriggerClass}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RANGES.map((entry) => (
+                <SelectItem key={entry.value} value={entry.value}>
+                  {entry.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </MobileFilterField>
+
+        {range === "custom" ? (
+          <MobileFilterField label="Custom dates">
+            <div className="flex flex-col gap-2">
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => update({ startDate: e.target.value || null })}
+                className={mobileFilterTriggerClass}
+                aria-label="Start date"
+              />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => update({ endDate: e.target.value || null })}
+                className={mobileFilterTriggerClass}
+                aria-label="End date"
+              />
+            </div>
+          </MobileFilterField>
+        ) : null}
+
+        <MobileFilterField label="Card">
+          <Select value={card} onValueChange={(v) => v && update({ cardType: v })}>
+            <SelectTrigger className={mobileFilterTriggerClass}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All cards</SelectItem>
+              {Object.entries(CARD_LABELS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </MobileFilterField>
+      </>
+    );
+  }
+
   return (
     <MobileFilterBar
       activeCount={activeCount}
@@ -125,6 +185,7 @@ export function DashboardFilters({ pushTo = "/" }: DashboardFiltersProps) {
         <span className="min-w-0 truncate text-xs text-muted-foreground">{rangeLabel}</span>
       }
       renderFilters={renderFilters}
+      renderMobileFilters={renderMobileFilters}
     />
   );
 }
