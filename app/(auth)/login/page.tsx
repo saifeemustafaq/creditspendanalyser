@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoginPwaInstallHint } from "@/components/login-pwa-install-hint";
 
 function LoginForm() {
   const router = useRouter();
@@ -82,6 +83,7 @@ export default function LoginPage() {
           <Suspense fallback={<div className="text-sm text-muted-foreground">Loading…</div>}>
             <LoginForm />
           </Suspense>
+          <LoginPwaInstallHint />
         </CardContent>
       </Card>
     </div>

@@ -83,6 +83,7 @@ creditspendanalyser/
 │   ├── manifest.ts                      # Web App Manifest (MetadataRoute)
 │   ├── icon.tsx                         # Favicon (ImageResponse)
 │   ├── apple-icon.tsx                   # Apple touch icon (ImageResponse)
+│   ├── apple-startup/[size]/route.tsx  # Dynamic iOS startup/splash images
 │   ├── sw.ts                            # Serwist service worker source
 │   ├── serwist/[path]/route.ts          # Serwist SW build route (/serwist/sw.js)
 │   ├── icons/icon-192/route.tsx         # Manifest icon 192×192
@@ -108,9 +109,12 @@ creditspendanalyser/
 │   ├── mobile-more-sheet.tsx            # Secondary routes + sign out (mobile More tab)
 │   ├── mobile-page-header.tsx           # Dashboard header with contextual mobile page title
 │   ├── mobile-toaster.tsx               # Responsive Sonner placement (mobile vs desktop)
+│   ├── login-pwa-install-hint.tsx       # Compact install hint on login (mobile)
 │   ├── dashboard-pwa-install-banner.tsx # Mobile-only install banner wrapper for dashboard
+│   ├── offline-banner.tsx               # Fixed in-app offline indicator
 │   ├── pwa-install-banner.tsx           # Dismissible PWA install banner (Chromium + iOS)
 │   ├── pwa-ios-install-sheet.tsx        # iOS Safari Add to Home Screen instructions
+│   ├── pwa-update-toast.tsx             # Sonner toast when a new service worker is waiting
 │   ├── serwist-provider.tsx             # Client wrapper for SerwistProvider (SW registration)
 │   ├── table-scroll-region.tsx          # Horizontal scroll wrapper for wide tables on mobile
 │   ├── transaction-row-card.tsx         # Mobile card layout for transaction rows
@@ -123,6 +127,7 @@ creditspendanalyser/
 │   ├── use-container-width.ts             # ResizeObserver hook for responsive chart layout
 │   ├── use-logout.ts                    # Sign-out handler (shared by sidebar + mobile More sheet)
 │   ├── use-mobile.ts                    # Responsive breakpoint hook (uses MOBILE_BREAKPOINT)
+│   ├── use-online.ts                    # navigator.onLine via useSyncExternalStore
 │   ├── use-pwa-install.ts               # beforeinstallprompt + iOS install detection
 │   ├── use-standalone.ts                # display-mode: standalone detection (incl. iOS)
 │   └── use-upload-wizard.ts            # Multi-step upload wizard state + handlers
@@ -136,6 +141,9 @@ creditspendanalyser/
 │   ├── nav.ts                           # Shared nav items, primary/secondary split, page titles
 │   ├── pwa-icon-art.tsx                 # Shared ImageResponse art for favicon/manifest icons
 │   ├── pwa-runtime-cache.ts             # Secure Serwist runtime caching (static assets only)
+│   ├── pwa.ts                           # PWA constants (dismiss TTL, manifest shortcuts)
+│   ├── pwa-splash-art.tsx               # ImageResponse art for iOS startup/splash screens
+│   ├── pwa-startup-images.ts            # iOS startup image specs + media queries
 │   ├── range.ts                         # Date range utilities + parseDate() + isRangeKey()
 │   ├── utils.ts                         # cn() helper (clsx + tailwind-merge)
 │   ├── parsers/                         # File format parsers
@@ -538,13 +546,16 @@ The app is installable as a PWA on iOS, Android, and desktop Chromium browsers. 
 
 | Concern | Convention |
 |---------|--------------|
-| **Manifest** | `app/manifest.ts` — `display: standalone`, icons at `/icons/icon-*` routes. |
+| **Manifest** | `app/manifest.ts` — `id: "/"`, `display: standalone`, shortcuts (Dashboard, Upload, Transactions), icons at `/icons/icon-*` routes. |
 | **Icons** | `app/icon.tsx`, `app/apple-icon.tsx`, `lib/pwa-icon-art.tsx` — shared chart/card motif. Theme colors: `PWA_THEME_COLOR`, `PWA_THEME_COLOR_DARK` in `lib/pwa-icon-art.tsx`. |
-| **Service worker** | `app/sw.ts` + `app/serwist/[path]/route.ts` → `/serwist/sw.js`. Registered via `SerwistProviderWrapper` in root layout. **Disabled in development** (`NODE_ENV === "development"`). |
+| **Service worker** | `app/sw.ts` + `app/serwist/[path]/route.ts` → `/serwist/sw.js`. Registered via `SerwistProviderWrapper` in root layout. **`skipWaiting: false`** — updates require user refresh via toast. **Disabled in development** (`NODE_ENV === "development"`). |
 | **Caching security** | `lib/pwa-runtime-cache.ts` — static assets only. **`NetworkOnly` for `/api/*`, HTML, and RSC.** Never use stock `defaultCache` wholesale. |
 | **Offline fallback** | Public route `app/~offline/page.tsx`. Precached; shown when navigation fails offline. |
-| **Auth / proxy** | `proxy.ts` public paths: `/login`, `/~offline`, `/serwist/*`, `/icons/*`, `/manifest.webmanifest`, `/api/auth`. |
-| **Install UX** | `PwaInstallBanner` in dashboard layout (`md:hidden`). iOS: `PwaIosInstallSheet` via More sheet. Dismiss state: `localStorage` key `pwa-install-dismissed`. |
+| **Offline indicator** | `OfflineBanner` in root layout — fixed top banner via `useOnline()` when `navigator.onLine` is false. |
+| **Auth / proxy** | `proxy.ts` public paths: `/login`, `/~offline`, `/serwist/*`, `/icons/*`, `/apple-startup/*`, `/manifest.webmanifest`, `/api/auth`. |
+| **Install UX** | `PwaInstallBanner` in dashboard layout (`md:hidden`). `LoginPwaInstallHint` on `/login` (`md:hidden`). iOS (all browsers): `PwaIosInstallSheet`. Dismiss: `pwa-install-dismissed-at` with **21-day TTL** (`lib/pwa.ts`). |
+| **iOS splash** | `appleWebApp.startupImage` in root layout metadata; images generated at `/apple-startup/{W}x{H}` via `lib/pwa-startup-images.ts`. |
+| **SW updates** | `PwaUpdateToast` listens for Serwist `waiting` event; Sonner toast with Refresh → `messageSkipWaiting()` + reload. |
 | **Standalone** | `useStandalone()` — hide install UI when `display-mode: standalone` or `navigator.standalone` (iOS). |
 | **Production** | PWA features require **HTTPS** (or `localhost`). Run Lighthouse PWA audit against `next build && next start`. |
 

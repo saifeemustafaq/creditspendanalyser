@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useStandalone } from "@/hooks/use-standalone";
-
-const DISMISS_KEY = "pwa-install-dismissed";
-const DISMISS_EVENT = "pwa-install-dismissed";
+import {
+  isIosDevice,
+  isPwaInstallDismissed,
+  markPwaInstallDismissed,
+  PWA_INSTALL_DISMISS_EVENT,
+} from "@/lib/pwa";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -12,27 +15,16 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 function subscribeDismissed(onStoreChange: () => void) {
-  window.addEventListener(DISMISS_EVENT, onStoreChange);
-  return () => window.removeEventListener(DISMISS_EVENT, onStoreChange);
+  window.addEventListener(PWA_INSTALL_DISMISS_EVENT, onStoreChange);
+  return () => window.removeEventListener(PWA_INSTALL_DISMISS_EVENT, onStoreChange);
 }
 
 function getDismissedSnapshot() {
-  return localStorage.getItem(DISMISS_KEY) === "1";
+  return isPwaInstallDismissed();
 }
 
 function getDismissedServerSnapshot() {
   return false;
-}
-
-function isIosDevice(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent);
-}
-
-function isIosSafari(): boolean {
-  if (!isIosDevice()) return false;
-  const ua = navigator.userAgent;
-  return /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
 }
 
 export function usePwaInstall() {
@@ -55,8 +47,7 @@ export function usePwaInstall() {
   }, []);
 
   const dismiss = useCallback(() => {
-    localStorage.setItem(DISMISS_KEY, "1");
-    window.dispatchEvent(new Event(DISMISS_EVENT));
+    markPwaInstallDismissed();
   }, []);
 
   const promptInstall = useCallback(async () => {
@@ -65,14 +56,13 @@ export function usePwaInstall() {
     const { outcome } = await deferredPrompt.userChoice;
     setDeferredPrompt(null);
     if (outcome === "accepted") {
-      localStorage.setItem(DISMISS_KEY, "1");
-      window.dispatchEvent(new Event(DISMISS_EVENT));
+      markPwaInstallDismissed();
     }
     return outcome === "accepted";
   }, [deferredPrompt]);
 
   const canPromptInstall = deferredPrompt !== null;
-  const showIosGuide = isIosSafari() && !isStandalone && !dismissed;
+  const showIosGuide = isIosDevice() && !isStandalone && !dismissed;
   const showInstallUi = !isStandalone && !dismissed && (canPromptInstall || showIosGuide);
 
   return {

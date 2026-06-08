@@ -3,7 +3,7 @@ import { verifyToken, SESSION_COOKIE } from "@/lib/auth";
 
 const PUBLIC_PATHS = ["/login", "/~offline"];
 
-const PWA_PUBLIC_PREFIXES = ["/serwist/", "/icons/"];
+const PWA_PUBLIC_PREFIXES = ["/serwist/", "/icons/", "/apple-startup/"];
 
 function isPublicRequest(pathname: string): boolean {
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
@@ -47,6 +47,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Run on everything except static assets, PWA assets, and Next internals.
-    "/((?!_next/static|_next/image|favicon.ico|serwist|icons|manifest.webmanifest|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|serwist|icons|apple-startup|manifest.webmanifest|.*\\.svg$|.*\\.png$|.*\\.jpg$|.*\\.ico$).*)",
   ],
 };

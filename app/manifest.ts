@@ -3,9 +3,11 @@ import {
   PWA_BACKGROUND_COLOR,
   PWA_THEME_COLOR,
 } from "@/lib/pwa-icon-art";
+import { PWA_MANIFEST_SHORTCUTS } from "@/lib/pwa";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "Credit Spend Analyser",
     short_name: "Spend Analyser",
     description: "Upload statements and analyze your credit card spending.",
@@ -34,5 +36,6 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
+    shortcuts: PWA_MANIFEST_SHORTCUTS,
   };
 }

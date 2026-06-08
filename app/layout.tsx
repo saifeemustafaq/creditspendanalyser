@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { MobileToaster } from "@/components/mobile-toaster";
+import { OfflineBanner } from "@/components/offline-banner";
 import { SerwistProviderWrapper } from "@/components/serwist-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { getPwaStartupImageDescriptors } from "@/lib/pwa-startup-images";
 import {
   PWA_THEME_COLOR,
   PWA_THEME_COLOR_DARK,
@@ -36,6 +38,7 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: APP_SHORT_NAME,
+    startupImage: getPwaStartupImageDescriptors(),
   },
   formatDetection: {
     telephone: false,
@@ -69,6 +72,7 @@ export default function RootLayout({
       <body className="flex min-h-dvh flex-col bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SerwistProviderWrapper>
+            <OfflineBanner />
             <TooltipProvider>{children}</TooltipProvider>
             <MobileToaster />
           </SerwistProviderWrapper>

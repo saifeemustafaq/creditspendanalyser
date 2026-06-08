@@ -29,7 +29,7 @@ export function PwaIosInstallSheet({ open, onOpenChange }: PwaIosInstallSheetPro
             </span>
             <span className="pt-0.5">
               Tap the <Share className="mx-0.5 inline size-4 align-text-bottom" aria-hidden /> Share
-              button in Safari&apos;s toolbar.
+              button in your browser&apos;s toolbar.
             </span>
           </li>
           <li className="flex gap-3">
